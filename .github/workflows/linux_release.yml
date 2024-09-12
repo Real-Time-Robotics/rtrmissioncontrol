@@ -13,7 +13,13 @@ on:
     branches:
     - '*'
     paths-ignore:
+      - 'android/**'
+      - 'deploy/**'
       - 'docs/**'
+      - '.github/workflows/docs_deploy.yml'
+      - '.github/workflows/android.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/windows.yml'
 
 defaults:
   run:
@@ -22,7 +28,7 @@ defaults:
 env:
   SOURCE_DIR:   ${{ github.workspace }}
   QT_VERSION:   5.15.2
-  ARTIFACT:     RTRMissionControl.AppImage
+  ARTIFACT:     QGroundControl.AppImage
   BUILD_TYPE:   ${{ fromJSON('["DailyBuild", "StableBuild"]')[ github.ref_type == 'tag' || contains(github.ref, 'Stable_' ) ] }}
 
 jobs:
@@ -41,7 +47,7 @@ jobs:
           git fetch --all --tags -f --depth 1
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4.0.0
         with:
           version:      ${{ env.QT_VERSION }}
           host:         linux
@@ -114,18 +120,18 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
 
-      - name: Upload build to S3 Bucket
-        if:                 github.event_name == 'push'
-        working-directory:  ${{ runner.temp }}/shadow_build_dir/package
-        run: |
-              aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-              aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-              aws s3 cp ${ARTIFACT} s3://qgroundcontrol/builds/${{ github.ref_name }}/${ARTIFACT} --region us-west-2 --acl public-read
+      # - name: Upload build to S3 Bucket
+      #   if:                 github.event_name == 'push'
+      #   working-directory:  ${{ runner.temp }}/shadow_build_dir/package
+      #   run: |
+      #         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #         aws s3 cp ${ARTIFACT} s3://qgroundcontrol/builds/${{ github.ref_name }}/${ARTIFACT} --region us-west-2 --acl public-read
 
-      - name: Upload tagged stable build to S3 latest Bucket
-        if:                 github.event_name == 'push' && github.ref_type == 'tag'
-        working-directory:  ${{ runner.temp }}/shadow_build_dir/package
-        run: |
-              aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-              aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-              aws s3 cp ${ARTIFACT} s3://qgroundcontrol/latest/${ARTIFACT} --region us-west-2 --acl public-read
+      # - name: Upload tagged stable build to S3 latest Bucket
+      #   if:                 github.event_name == 'push' && github.ref_type == 'tag'
+      #   working-directory:  ${{ runner.temp }}/shadow_build_dir/package
+      #   run: |
+      #         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #         aws s3 cp ${ARTIFACT} s3://qgroundcontrol/latest/${ARTIFACT} --region us-west-2 --acl public-read

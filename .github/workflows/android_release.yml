@@ -4,7 +4,7 @@ name: Android 32/64-bit Release
 on:
   push:
     branches:
-      - "master"
+      - "main"
       - "Stable*"
     tags:
       - "v*"
@@ -140,7 +140,19 @@ jobs:
       - name: List all files in shadow_build_dir
         run: |
           ls -R ${{ runner.temp }}/shadow_build_dir/package/
-
+          
+      - name: Rename QGroundControl to RTRMissionControl
+        run: |
+          if [ -f ${{ runner.temp }}/shadow_build_dir/package/QGroundControl32.apk ]; then
+            mv ${{ runner.temp }}/shadow_build_dir/package/QGroundControl32.apk ${{ runner.temp }}/shadow_build_dir/package/RTRMissionControl32.apk;
+          else
+            echo "QGroundControl32.apk does not exist, skipping rename.";
+          fi
+           if [ -f ${{ runner.temp }}/shadow_build_dir/package/QGroundControl64.apk ]; then
+            mv ${{ runner.temp }}/shadow_build_dir/package/QGroundControl64.apk ${{ runner.temp }}/shadow_build_dir/package/RTRMissionControl64.apk;
+          else
+            echo "QGroundControl64.apk does not exist, skipping rename.";
+          fi
 
       - name: Save artifact
         uses: actions/upload-artifact@master

@@ -144,14 +144,14 @@ jobs:
       - name: Rename QGroundControl to RTRMissionControl
         run: |
           if [ -f ${{ runner.temp }}/shadow_build_dir/package/QGroundControl32.apk ]; then
-            mv ${{ runner.temp }}/shadow_build_dir/package/QGroundControl32.apk ${{ runner.temp }}/shadow_build_dir/package/RTRMissionControl.apk;
+            mv ${{ runner.temp }}/shadow_build_dir/package/QGroundControl32.apk ${{ runner.temp }}/shadow_build_dir/package/RTRMissionControl32.apk;
           else
             echo "QGroundControl32.apk does not exist, skipping rename.";
           fi
            if [ -f ${{ runner.temp }}/shadow_build_dir/package/QGroundControl64.apk ]; then
-            mv ${{ runner.temp }}/shadow_build_dir/package/QGroundControl32.apk ${{ runner.temp }}/shadow_build_dir/package/RTRMissionControl.apk;
+            mv ${{ runner.temp }}/shadow_build_dir/package/QGroundControl64.apk ${{ runner.temp }}/shadow_build_dir/package/RTRMissionControl64.apk;
           else
-            echo "QGroundControl32.apk does not exist, skipping rename.";
+            echo "QGroundControl64.apk does not exist, skipping rename.";
           fi
 
       - name: Save artifact

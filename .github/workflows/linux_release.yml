@@ -13,7 +13,13 @@ on:
     branches:
       - "*"
     paths-ignore:
-      - "docs/**"
+      - 'android/**'
+      - 'deploy/**'
+      - 'docs/**'
+      - '.github/workflows/docs_deploy.yml'
+      - '.github/workflows/android.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/windows.yml'
 
 defaults:
   run:
@@ -41,7 +47,7 @@ jobs:
           git fetch --all --tags -f --depth 1
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4.0.0
         with:
           version: ${{ env.QT_VERSION }}
           host: linux

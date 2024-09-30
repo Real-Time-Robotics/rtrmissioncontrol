@@ -1,15 +1,24 @@
 name: Linux Release
-
 on:
   push:
     branches:
-      - 'main'
-      - 'Stable*'
+      - "main"
+      - "Stable*"
     tags:
-      - 'v4.2.0'
+      - "v*"
+    paths-ignore:
+      - "docs/**"
   pull_request:
     branches:
-      - 'v4.2.0'
+      - "*"
+    paths-ignore:
+      - 'android/**'
+      - 'deploy/**'
+      - 'docs/**'
+      - '.github/workflows/docs_deploy.yml'
+      - '.github/workflows/android.yml'
+      - '.github/workflows/macos.yml'
+      - '.github/workflows/windows.yml'
 
 
 defaults:

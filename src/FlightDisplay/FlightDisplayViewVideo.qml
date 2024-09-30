@@ -36,43 +36,22 @@ Item {
     property bool   _hasZoom:           _camera && _camera.hasZoom
     property int    _fitMode:           QGroundControl.settingsManager.videoSettings.videoFit.rawValue
 
-    function getWidth() {
-        return videoBackground.getWidth()
-    }
-    function getHeight() {
-        return videoBackground.getHeight()
-    }
-
     property double _thermalHeightFactor: 0.85 //-- TODO
 
-        Image {
-            id:             noVideo
-            anchors.fill:   parent
-            source:         "/res/NoVideoBackground.jpg"
-            fillMode:       Image.PreserveAspectCrop
-            visible:        !(QGroundControl.videoManager.decoding)
-
-            Rectangle {
-                anchors.centerIn:   parent
-                width:              noVideoLabel.contentWidth + ScreenTools.defaultFontPixelHeight
-                height:             noVideoLabel.contentHeight + ScreenTools.defaultFontPixelHeight
-                radius:             ScreenTools.defaultFontPixelWidth / 2
-                color:              "black"
-                opacity:            0.5
-            }
-
-            QGCLabel {
-                id:                 noVideoLabel
-                text:               QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue ? qsTr("WAITING FOR VIDEO") : qsTr("VIDEO DISABLED")
-                font.family:        ScreenTools.demiboldFontFamily
-                color:              "white"
-                font.pointSize:     useSmallFont ? ScreenTools.smallFontPointSize : ScreenTools.largeFontPointSize
-                anchors.centerIn:   parent
-            }
-        }
-
     Rectangle {
-        id:             videoBackground
+        id:             noVideo
+        anchors.fill:   parent
+        color:          Qt.rgba(0,0,0,0.75)
+        visible:        !(QGroundControl.videoManager.decoding)
+        QGCLabel {
+            text:               QGroundControl.settingsManager.videoSettings.streamEnabled.rawValue ? qsTr("WAITING FOR VIDEO") : qsTr("VIDEO DISABLED")
+            font.family:        ScreenTools.demiboldFontFamily
+            color:              "white"
+            font.pointSize:     useSmallFont ? ScreenTools.smallFontPointSize : ScreenTools.largeFontPointSize
+            anchors.centerIn:   parent
+        }
+    }
+    Rectangle {
         anchors.fill:   parent
         color:          "black"
         visible:        QGroundControl.videoManager.decoding
@@ -100,7 +79,7 @@ Item {
 
                 Connections {
                     target: QGroundControl.videoManager
-                    function onImageFileChanged() {
+                    onImageFileChanged: {
                         videoContent.grabToImage(function(result) {
                             if (!result.saveToFile(QGroundControl.videoManager.imageFile)) {
                                 console.error('Error capturing video frame');

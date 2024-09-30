@@ -33,12 +33,6 @@ Rectangle {
     property bool   _communicationLost: _activeVehicle ? _activeVehicle.vehicleLinkManager.communicationLost : false
     property color  _mainStatusBGColor: qgcPal.brandingPurple
 
-    function dropMessageIndicatorTool() {
-        if (currentToolbar === flyViewToolbar) {
-            indicatorLoader.item.dropMessageIndicatorTool();
-        }
-    }
-
     QGCPalette { id: qgcPal }
 
     /// Bottom single pixel divider
@@ -171,7 +165,7 @@ Rectangle {
     Rectangle {
         anchors.bottom: parent.bottom
         height:         _root.height * 0.05
-        width:          _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
+        width:          _activeVehicle ? _activeVehicle.parameterManager.loadProgress * parent.width : 0
         color:          qgcPal.colorGreen
         visible:        !largeProgressBar.visible
     }
@@ -186,25 +180,25 @@ Rectangle {
         color:          qgcPal.window
         visible:        _showLargeProgress
 
-        property bool _initialDownloadComplete: _activeVehicle ? _activeVehicle.initialConnectComplete : true
+        property bool _initialDownloadComplete: _activeVehicle ? _activeVehicle.parameterManager.parametersReady : true
         property bool _userHide:                false
         property bool _showLargeProgress:       !_initialDownloadComplete && !_userHide && qgcPal.globalTheme === QGCPalette.Light
 
         Connections {
             target:                 QGroundControl.multiVehicleManager
-            function onActiveVehicleChanged(activeVehicle) { largeProgressBar._userHide = false }
+            onActiveVehicleChanged: largeProgressBar._userHide = false
         }
 
         Rectangle {
             anchors.top:    parent.top
             anchors.bottom: parent.bottom
-            width:          _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
+            width:          _activeVehicle ? _activeVehicle.parameterManager.loadProgress * parent.width : 0
             color:          qgcPal.colorGreen
         }
 
         QGCLabel {
             anchors.centerIn:   parent
-            text:               qsTr("Downloading")
+            text:               qsTr("Downloading Parameters")
             font.pointSize:     ScreenTools.largeFontPointSize
         }
 

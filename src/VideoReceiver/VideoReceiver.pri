@@ -25,7 +25,9 @@ LinuxBuild {
         CONFIG      += VideoEnabled
         INCLUDEPATH += $$GST_ROOT/Headers
         LIBS        += -F/Library/Frameworks -framework GStreamer
-        QMAKE_LIBDIR += $$GST_ROOT/Versions/1.0/lib/
+        QMAKE_LFLAGS += -Wl,-rpath,@executable_path/../Frameworks/GStreamer.framework/Versions/1.0/lib
+        QMAKE_LFLAGS += -Wl,-rpath,@executable_path/../Frameworks/GStreamer.framework/Versions/1.0
+        QMAKE_LFLAGS += -Wl,-rpath,/Library/Frameworks/GStreamer.framework/Versions/1.0
     }
 } else:iOSBuild {
     #- gstreamer framework installed by the gstreamer iOS SDK installer (default to home directory)
@@ -38,11 +40,6 @@ LinuxBuild {
 } else:WindowsBuild {
     #- gstreamer installed by default under c:/gstreamer
     GST_ROOT = c:/gstreamer/1.0/msvc_x86_64
-
-    !exists($$GST_ROOT) {
-        # In GitHub actions windows runner installation is on D drive, so try there as well
-        GST_ROOT = d:/gstreamer/1.0/msvc_x86_64
-    }
 
     exists($$GST_ROOT) {
         CONFIG      += VideoEnabled
@@ -68,16 +65,13 @@ LinuxBuild {
         QMAKE_POST_LINK += $$escape_expand(\\n) xcopy \"$$GST_ROOT_WIN\\lib\\gstreamer-1.0\\*.dll\" \"$$DESTDIR_WIN\\gstreamer-plugins\\\" /Y $$escape_expand(\\n)
     }
 } else:AndroidBuild {
-    #- gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.6/***
-    contains(ANDROID_TARGET_ARCH, armeabi-v7a) {
-        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.6/armv7
-    } else:contains(ANDROID_TARGET_ARCH, arm64-v8a) {
-        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.6/arm64
-    } else:contains(ANDROID_TARGET_ARCH, x86_64) {
-        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.6/x86_64
+    #- gstreamer assumed to be installed in $$PWD/../../gstreamer-1.0-android-universal-1.18.1/***
+    contains(QT_ARCH, arm) {
+        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.1/armv7
+    } else:contains(QT_ARCH, arm64) {
+        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.1/arm64
     } else {
-        message(Unknown ANDROID_TARGET_ARCH $$ANDROID_TARGET_ARCH)
-        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.6/x86
+        GST_ROOT = $$PWD/../../gstreamer-1.0-android-universal-1.18.1/x86
     }
     exists($$GST_ROOT) {
         QMAKE_CXXFLAGS  += -pthread

@@ -1,11 +1,11 @@
-import QtQuick                  2.15
-import QtQuick.Controls         2.15
+import QtQuick                  2.3
+import QtQuick.Controls         1.2
 
 import QGroundControl.ScreenTools   1.0
 import QGroundControl.Palette       1.0
 
 /// The SliderSwitch control implements a sliding switch control similar to the power off
-/// control on an iPhone. It supports holding the space bar to slide the switch.
+/// control on an iPhone.
 Rectangle {
     id:             _root
     implicitWidth:  label.contentWidth + (_diameter * 2.5) + (_border * 4)
@@ -18,46 +18,15 @@ Rectangle {
     property string confirmText                         ///< Text for slider
     property alias  fontPointSize: label.font.pointSize ///< Point size for text
 
-    property real _border:                      4   
-    property real _diameter:                    height - (_border * 2)
-    property real _dragStartX:                  _border
-    property real _dragStopX:                   _root.width - (_diameter + _border)
-    property bool _waitingForLastAutoRepeat:    false
-
-    Keys.onSpacePressed: {
-        if (visible && event.modifiers === Qt.NoModifier && event.isAutoRepeat && !sliderDragArea.drag.active) {
-            event.accepted = true
-            if (_waitingForLastAutoRepeat) {
-                resetSpaceBarSliding()
-                accept()
-            } else {
-                sliderAnimation.start()
-                spaceBarTimout.restart()
-            }
-        }
-    }
-
-    function resetSpaceBarSliding() {
-        _waitingForLastAutoRepeat = false
-        spaceBarTimout.stop()
-        slider.reset()
-    }
-
-    Timer {
-        id:             spaceBarTimout
-        interval:       200
-        repeat:         false
-        onTriggered:    _root.resetSpaceBarSliding()
-    }
+    property real _border: 4
+    property real _diameter: height - (_border * 2)
 
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
     QGCLabel {
         id:                         label
-        x:                          _diameter + _border
-        width:                      parent.width - x
+        anchors.horizontalCenter:   parent.horizontalCenter
         anchors.verticalCenter:     parent.verticalCenter
-        horizontalAlignment:        Text.AlignHCenter
         text:                       confirmText
         color:                      qgcPal.buttonText
     }
@@ -84,19 +53,6 @@ Rectangle {
             source:                 "/res/ArrowRight.svg"
         }
 
-        PropertyAnimation on x {
-            id:         sliderAnimation
-            duration:   1500
-            from:       _dragStartX
-            to:         _dragStopX
-            running:    false
-            onFinished: _waitingForLastAutoRepeat = true
-        }
-
-        function reset() {
-            slider.x = _border
-            sliderAnimation.stop()
-        }
     }
 
     QGCMouseArea {
@@ -105,18 +61,20 @@ Rectangle {
         fillItem:           slider
         drag.target:        slider
         drag.axis:          Drag.XAxis
-        drag.minimumX:      _dragStartX
-        drag.maximumX:      _dragStopX
+        drag.minimumX:      _border
+        drag.maximumX:      _maxXDrag
         preventStealing:    true
 
-        property bool dragActive: drag.active
+        property real _maxXDrag:    _root.width - (_diameter + _border)
+        property bool dragActive:   drag.active
+        property real _dragOffset:  1
 
         onDragActiveChanged: {
             if (!sliderDragArea.drag.active) {
-                if (slider.x > _dragStopX - _border) {
+                if (slider.x > _maxXDrag - _border) {
                     _root.accept()
                 }
-                slider.reset()
+                slider.x = _border
             }
         }
     }

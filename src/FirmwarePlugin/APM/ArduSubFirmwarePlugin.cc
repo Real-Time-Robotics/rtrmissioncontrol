@@ -163,7 +163,7 @@ void ArduSubFirmwarePlugin::initializeStreamRates(Vehicle* vehicle) {
 bool ArduSubFirmwarePlugin::isCapable(const Vehicle* vehicle, FirmwareCapabilities capabilities)
 {
     Q_UNUSED(vehicle);
-    uint32_t available = SetFlightModeCapability | PauseVehicleCapability | GuidedModeCapability;
+    uint32_t available = SetFlightModeCapability | PauseVehicleCapability;
     return (capabilities & available) == capabilities;
 }
 
@@ -209,7 +209,6 @@ const QVariantList& ArduSubFirmwarePlugin::modeIndicators(const Vehicle* vehicle
         _modeIndicators = QVariantList({
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/ModeIndicator.qml")),
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/ArmedIndicator.qml")),
-            QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/MultiVehicleSelector.qml")),
         });
     }
     return _modeIndicators;

@@ -37,7 +37,7 @@ public:
             AutoPilotStackAPM,
             PX4FlowPX4,
             PX4FlowAPM,
-            SiKRadio,
+            ThreeDRRadio,
             SingleFirmwareMode
         } AutoPilotStackType_t;
 
@@ -78,7 +78,7 @@ public:
 
         // members
         AutoPilotStackType_t    autopilotStackType;
-        FirmwareBuildType_t     firmwareType;
+        FirmwareBuildType_t          firmwareType;
         FirmwareVehicleType_t   firmwareVehicleType;
     };
 
@@ -204,7 +204,7 @@ private:
 
     // Firmware hashes
     QHash<FirmwareIdentifier, QString> _rgPX4FLowFirmware;
-    QHash<FirmwareIdentifier, QString> _rgSiKRadioFirmware;
+    QHash<FirmwareIdentifier, QString> _rg3DRRadioFirmware;
 
     // Hash map for ArduPilot ChibiOS lookup by board name
     QHash<FirmwareIdentifier, QString> _rgAPMChibiosReplaceNamedBoardFirmware;
@@ -225,6 +225,9 @@ private:
     QPixmap _boardIcon;             ///< Icon used to display image of board
     
     QString _firmwareFilename;      ///< Image which we are going to flash to the board
+    
+    QNetworkAccessManager*  _downloadManager;       ///< Used for firmware file downloading across the internet
+    QNetworkReply*          _downloadNetworkReply;  ///< Used for firmware file downloading across the internet
     
     /// @brief Thread controller which is used to run bootloader commands on separate thread
     PX4FirmwareUpgradeThreadController* _threadController;

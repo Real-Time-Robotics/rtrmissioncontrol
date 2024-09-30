@@ -18,6 +18,9 @@
 #include "AppSettings.h"
 
 MissionControllerTest::MissionControllerTest(void)
+    : _multiSpyMissionController(nullptr)
+    , _multiSpyMissionItem(nullptr)
+    , _missionController(nullptr)
 {
     
 }
@@ -25,13 +28,13 @@ MissionControllerTest::MissionControllerTest(void)
 void MissionControllerTest::cleanup(void)
 {
     delete _masterController;
-    delete _multiSpyMissionController;
-    delete _multiSpyMissionItem;
+    _masterController = nullptr;
 
-    _masterController           = nullptr;
-    _missionController          = nullptr;
-    _multiSpyMissionController  = nullptr;
-    _multiSpyMissionItem        = nullptr;
+    delete _multiSpyMissionController;
+    _multiSpyMissionController = nullptr;
+
+    delete _multiSpyMissionItem;
+    _multiSpyMissionItem = nullptr;
 
     MissionControllerManagerTest::cleanup();
 }
@@ -258,13 +261,13 @@ void MissionControllerTest::_testGlobalAltMode(void)
     _initForFirmwareType(MAV_AUTOPILOT_PX4);
 
     struct  _globalAltMode_s {
-        QGroundControlQmlGlobal::AltMode   altMode;
+        QGroundControlQmlGlobal::AltitudeMode   altMode;
         MAV_FRAME                               expectedMavFrame;
     } altModeTestCases[] = {
-        { QGroundControlQmlGlobal::AltitudeModeRelative,            MAV_FRAME_GLOBAL_RELATIVE_ALT },
-        { QGroundControlQmlGlobal::AltitudeModeAbsolute,            MAV_FRAME_GLOBAL },
-        { QGroundControlQmlGlobal::AltitudeModeCalcAboveTerrain,    MAV_FRAME_GLOBAL },
-        { QGroundControlQmlGlobal::AltitudeModeTerrainFrame,        MAV_FRAME_GLOBAL_TERRAIN_ALT },
+        { QGroundControlQmlGlobal::AltitudeModeRelative,        MAV_FRAME_GLOBAL_RELATIVE_ALT },
+        { QGroundControlQmlGlobal::AltitudeModeAbsolute,        MAV_FRAME_GLOBAL },
+        { QGroundControlQmlGlobal::AltitudeModeAboveTerrain,    MAV_FRAME_GLOBAL },
+        { QGroundControlQmlGlobal::AltitudeModeTerrainFrame,    MAV_FRAME_GLOBAL_TERRAIN_ALT },
     };
 
     for (const _globalAltMode_s& testCase: altModeTestCases) {

@@ -30,7 +30,7 @@ typedef struct {
     size_t                          cFactValues;
     const FactValue_t*              rgFactValues;
     double                          altValue;
-    QGroundControlQmlGlobal::AltMode altMode;
+    QGroundControlQmlGlobal::AltitudeMode altMode;
 } ItemExpected_t;
 
 class SimpleMissionItemTest : public VisualMissionItemTest

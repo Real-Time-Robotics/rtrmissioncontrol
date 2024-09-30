@@ -27,7 +27,7 @@ class ComplexMissionItem : public VisualMissionItem
     Q_OBJECT
 
 public:
-    ComplexMissionItem(PlanMasterController* masterController, bool flyView);
+    ComplexMissionItem(PlanMasterController* masterController, bool flyView, QObject* parent);
 
     const ComplexMissionItem& operator=(const ComplexMissionItem& other);
 

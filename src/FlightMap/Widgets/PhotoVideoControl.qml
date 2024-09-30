@@ -25,7 +25,7 @@ import QGroundControl.FactControls      1.0
 
 Rectangle {
     height:     mainLayout.height + (_margins * 2)
-    color:      Qt.rgba(qgcPal.window.r, qgcPal.window.g, qgcPal.window.b, 0.5)
+    color:      "#80000000"
     radius:     _margins
     visible:    (_mavlinkCamera || _videoStreamAvailable || _simpleCameraAvailable) && multiVehiclePanelSelector.showSingleVehiclePanel
 
@@ -70,9 +70,9 @@ Rectangle {
     property bool   _mavlinkCameraPhotoCaptureIsIdle:           _mavlinkCamera && (_mavlinkCamera.photoStatus === QGCCameraControl.PHOTO_CAPTURE_IDLE || _mavlinkCamera.photoStatus >= QGCCameraControl.PHOTO_CAPTURE_LAST)
     property bool   _mavlinkCameraStorageReady:                 _mavlinkCamera && _mavlinkCamera.storageStatus === QGCCameraControl.STORAGE_READY
     property bool   _mavlinkCameraBatteryReady:                 _mavlinkCamera && _mavlinkCamera.batteryRemaining >= 0
-    property bool   _mavlinkCameraStorageSupported:             _mavlinkCamera && _mavlinkCamera.storageStatus !== QGCCameraControl.STORAGE_NOT_SUPPORTED
+    property bool   _mavlinkCameraStorageSupported:             _mavlinkCamera && _mavlinkCamera.storageStatus === QGCCameraControl.STORAGE_NOT_SUPPORTED
     property bool   _mavlinkCameraAllowsPhotoWhileRecording:    false
-    property bool   _mavlinkCameraCanShoot:                     (!_mavlinkCameraModeUndefined && ((_mavlinkCameraStorageReady && _mavlinkCamera.storageFree > 0) || !_mavlinkCameraStorageSupported)) || _videoStreamManager.streaming
+    property bool   _mavlinkCameraCanShoot:                     (!_mavlinkCameraModeUndefined && ((_mavlinkCameraStorageReady && _mavlinkCamera.storageFree > 0) || _mavlinkCameraStorageSupported)) || _videoStreamManager.streaming
     property bool   _mavlinkCameraIsShooting:                   ((_mavlinkCameraInVideoMode && _mavlinkCameraVideoIsRecording) || (_mavlinkCameraInPhotoMode && !_mavlinkCameraPhotoCaptureIsIdle)) || _videoStreamManager.recording
 
     // The following settings and functions unify between a mavlink camera and a simple video stream for simple access
@@ -101,19 +101,7 @@ Rectangle {
 
     function toggleShooting() {
         console.log("toggleShooting", _anyVideoStreamAvailable)
-
-        // This whole mavlinkCameraCaptureVideoOrPhotos stuff is to work around some strange qml boolean testing 
-        // behavior which wasn't working correctly. This should work:
-        //    if (_mavlinkCamera && (_mavlinkCamera.capturesVideo || _mavlinkCamera.capturesPhotos) ) {
-        // but it doesn't for some strange reason. Hence all the stuff below...
-        var mavlinkCameraCaptureVideoOrPhotos = false
-        if (_mavlinkCamera) {
-            if (_mavlinkCamera.capturesVideo || _mavlinkCamera.capturesPhotos) {
-                mavlinkCameraCaptureVideoOrPhotos = true
-            }
-        }
-        
-        if (mavlinkCameraCaptureVideoOrPhotos) {
+        if (_mavlinkCamera && _mavlinkCamera.capturesVideo) {
             if(_mavlinkCameraInVideoMode) {
                 _mavlinkCamera.toggleVideo()
             } else {
@@ -165,7 +153,7 @@ Rectangle {
 
         QGCMouseArea {
             fillItem:   parent
-            onClicked:  settingsDialogComponent.createObject(mainWindow).open()
+            onClicked:  mainWindow.showPopupDialogFromComponent(settingsDialogComponent)
         }
     }
 
@@ -284,42 +272,6 @@ Rectangle {
             }
         }
 
-        // Tracking button
-        Rectangle {
-            Layout.alignment:   Qt.AlignHCenter
-            color:              _mavlinkCamera && _mavlinkCamera.trackingEnabled ? qgcPal.colorRed : qgcPal.windowShadeLight
-            width:              ScreenTools.defaultFontPixelWidth * 6
-            height:             width
-            radius:             width * 0.5
-            border.color:       qgcPal.buttonText
-            border.width:       3
-            visible:            _mavlinkCamera && _mavlinkCamera.hasTracking
-            QGCColoredImage {
-                height:             parent.height * 0.5
-                width:              height
-                anchors.centerIn:   parent
-                source:             "/qmlimages/TrackingIcon.svg"
-                fillMode:           Image.PreserveAspectFit
-                sourceSize.height:  height
-                color:              qgcPal.text
-                MouseArea {
-                    anchors.fill:   parent
-                    onClicked: {
-                        _mavlinkCamera.trackingEnabled = !_mavlinkCamera.trackingEnabled;
-                        if(!_mavlinkCamera.trackingEnabled) {
-                            !_mavlinkCamera.stopTracking()
-                        }
-                    }
-                }
-            }
-        }
-        QGCLabel {
-            Layout.alignment:   Qt.AlignHCenter
-            text:               qsTr("Camera Tracking")
-            font.pointSize:     ScreenTools.defaultFontPointSize
-            visible:            _mavlinkCamera && _mavlinkCamera.hasTracking
-        }
-
         //-- Status Information
         ColumnLayout {
             Layout.alignment:   Qt.AlignHCenter
@@ -334,7 +286,7 @@ Rectangle {
                 Layout.alignment:   Qt.AlignHCenter
                 text:               (_mavlinkCameraInVideoMode && _mavlinkCamera.videoStatus === QGCCameraControl.VIDEO_CAPTURE_STATUS_RUNNING) ? _mavlinkCamera.recordTimeStr : "00:00:00"
                 font.pointSize:     ScreenTools.largeFontPointSize
-                visible:            _mavlinkCameraInVideoMode && _mavlinkCamera.capturesVideo
+                visible:            _mavlinkCameraInVideoMode
             }
             QGCLabel {
                 Layout.alignment:   Qt.AlignHCenter
@@ -515,19 +467,8 @@ Rectangle {
                                 stepSize:                   parent._fact.increment
                                 visible:                    parent._isSlider
                                 updateValueWhileDragging:   false
-                                property bool initialized:  false
-
-                                onValueChanged: {
-                                    if (!initialized) {
-                                        return
-                                    }
-                                    parent._fact.value = value
-                                }
-
-                                Component.onCompleted: {
-                                    value = parent._fact.value
-                                    initialized = true
-                                }
+                                onValueChanged:             parent._fact.value = value
+                                Component.onCompleted:      value = parent._fact.value
                             }
                             QGCSwitch {
                                 checked:        parent._fact ? parent._fact.value : false

@@ -42,9 +42,11 @@ public:
     TCPConfiguration(const QString& name);
     TCPConfiguration(TCPConfiguration* source);
 
-    quint16             port        (void) const                         { return _port; }
-    QString             host        (void) const                         { return _host; }
+    quint16             port        (void)                          { return _port; }
+    const QHostAddress& address     (void)                          { return _address; }
+    const QString       host        (void)                          { return _address.toString(); }
     void                setPort     (quint16 port);
+    void                setAddress  (const QHostAddress& address);
     void                setHost     (const QString host);
 
     //LinkConfiguration overrides
@@ -60,7 +62,7 @@ signals:
     void hostChanged(void);
 
 private:
-    QString         _host;
+    QHostAddress    _address;
     quint16         _port;
 };
 

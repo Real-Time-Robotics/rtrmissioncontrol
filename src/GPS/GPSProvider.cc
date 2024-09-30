@@ -95,8 +95,7 @@ void GPSProvider::run()
             gpsDriver->setBasePosition(_fixedBaseLatitude, _fixedBaseLongitude, _fixedBaseAltitudeMeters, _fixedBaseAccuracyMeters * 1000.0f);
         }
 
-        _gpsConfig.output_mode = GPSHelper::OutputMode::RTCM;
-        if (gpsDriver->configure(baudrate, _gpsConfig) == 0) {
+        if (gpsDriver->configure(baudrate, GPSDriverUBX::OutputMode::RTCM) == 0) {
 
             /* reset report */
             memset(&_reportGpsPos, 0, sizeof(_reportGpsPos));
@@ -226,10 +225,6 @@ int GPSProvider::callback(GPSCallbackType type, void *data1, int data2)
             break;
 
         case GPSCallbackType::setClock:
-            /* do nothing */
-            break;
-
-        case GPSCallbackType::gotRelativePositionMessage:
             /* do nothing */
             break;
     }

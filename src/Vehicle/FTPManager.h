@@ -32,23 +32,12 @@ public:
     FTPManager(Vehicle* vehicle);
 
 	/// Downloads the specified file.
-    ///     @param fromCompId Component id of the component to download from. If fromCompId is MAV_COMP_ID_ALL, then MAV_COMP_ID_AUTOPILOT1 is used.
-    ///     @param fromURI    File to download from component, fully qualified path. May be in the format "mftp://[;comp=<id>]..." where the component id
-    ///                       is specified. If component id is not specified, then the id set via fromCompId is used.
-    ///     @param toDir      Local directory to download file to
-    ///     @param filename   (optional)
-    ///     @param checksize  (optional, default true) If true compare the filesize indicated in the open
-    ///                       response with the transmitted filesize. If false the transmission is tftp style
-    ///                       and the indicated filesize from MAVFTP fileopen response is ignored.
-    ///                       This is used for the APM parameter download where the filesize is wrong due to
-    ///                       a dynamic file creation on the vehicle.
+    ///     @param fromURI  File to download from vehicle, fully qualified path. May be in the format "mftp://[;comp=<id>]..." where the component id is specified.
+    ///                     If component id is not specified MAV_COMP_ID_AUTOPILOT1 is used.
+    ///     @param toDir    Local directory to download file to
     /// @return true: download has started, false: error, no download
     /// Signals downloadComplete, commandError, commandProgress
-    bool download(uint8_t fromCompId, const QString& fromURI, const QString& toDir, const QString& fileName="", bool checksize = true);
-
-    /// Cancel the current operation
-    /// This will emit downloadComplete() when done, and if there's currently a download in progress
-    void cancel();
+    bool download(const QString& fromURI, const QString& toDir);
 
     static const char* mavlinkFTPScheme;
 
@@ -64,7 +53,7 @@ signals:
     
     /// Signalled during a lengthy command to show progress
     ///     @param value Amount of progress: 0.0 = none, 1.0 = complete
-    void commandProgress(float value);
+    void commandProgress(int value);
 	
 private slots:
     void _ackOrNakTimeout(void);
@@ -96,9 +85,6 @@ private:
         uint32_t                fileSize;               ///< Size of file being downloaded
         QFile                   file;
         int                     retryCount;
-        bool                    checksize;
-
-        bool inProgress() const { return fileSize > 0; }
 
         void reset() {
             sessionId       = 0;
@@ -137,12 +123,7 @@ private:
     void    _fillRequestDataWithString(MavlinkFTP::Request* request, const QString& str);
     void    _fillMissingBlocksWorker    (bool firstRequest);
     void    _burstReadFileWorker        (bool firstRequest);
-    bool    _parseURI                   (uint8_t fromCompId, const QString& uri, QString& parsedURI, uint8_t& compId);
-
-    void    _terminateSessionBegin      (void);
-    void    _terminateSessionAckOrNak   (const MavlinkFTP::Request* ackOrNak);
-    void    _terminateSessionTimeout    (void);
-    void    _terminateComplete          (void);
+    bool    _parseURI                   (const QString& uri, QString& parsedURI, uint8_t& compId);
 
     Vehicle*                _vehicle;
     uint8_t                 _ftpCompId = MAV_COMP_ID_AUTOPILOT1;

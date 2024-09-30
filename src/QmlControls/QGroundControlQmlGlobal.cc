@@ -29,33 +29,12 @@ QGroundControlQmlGlobal::QGroundControlQmlGlobal(QGCApplication* app, QGCToolbox
 {
     // We clear the parent on this object since we run into shutdown problems caused by hybrid qml app. Instead we let it leak on shutdown.
     setParent(nullptr);
-
     // Load last coordinates and zoom from config file
     QSettings settings;
     settings.beginGroup(_flightMapPositionSettingsGroup);
     _coord.setLatitude(settings.value(_flightMapPositionLatitudeSettingsKey,    _coord.latitude()).toDouble());
     _coord.setLongitude(settings.value(_flightMapPositionLongitudeSettingsKey,  _coord.longitude()).toDouble());
     _zoom = settings.value(_flightMapZoomSettingsKey, _zoom).toDouble();
-    _flightMapPositionSettledTimer.setSingleShot(true);
-    _flightMapPositionSettledTimer.setInterval(1000);
-    connect(&_flightMapPositionSettledTimer, &QTimer::timeout, [](){
-        // When they settle, save flightMapPosition and Zoom to the config file
-        QSettings settings;
-        settings.beginGroup(_flightMapPositionSettingsGroup);
-        settings.setValue(_flightMapPositionLatitudeSettingsKey, _coord.latitude());
-        settings.setValue(_flightMapPositionLongitudeSettingsKey, _coord.longitude());
-        settings.setValue(_flightMapZoomSettingsKey, _zoom);
-    });
-    connect(this, &QGroundControlQmlGlobal::flightMapPositionChanged, this, [this](QGeoCoordinate){
-        if (!_flightMapPositionSettledTimer.isActive()) {
-            _flightMapPositionSettledTimer.start();
-        }
-    });
-    connect(this, &QGroundControlQmlGlobal::flightMapZoomChanged, this, [this](double){
-        if (!_flightMapPositionSettledTimer.isActive()) {
-            _flightMapPositionSettledTimer.start();
-        }
-    });
 }
 
 QGroundControlQmlGlobal::~QGroundControlQmlGlobal()
@@ -77,6 +56,7 @@ void QGroundControlQmlGlobal::setToolbox(QGCToolbox* toolbox)
     _firmwarePluginManager  = toolbox->firmwarePluginManager();
     _settingsManager        = toolbox->settingsManager();
     _gpsRtkFactGroup        = qgcApp()->gpsRtkFactGroup();
+    _airspaceManager        = toolbox->airspaceManager();
     _adsbVehicleManager     = toolbox->adsbVehicleManager();
     _globalPalette          = new QGCPalette(this);
 #if defined(QGC_ENABLE_PAIRING)
@@ -228,7 +208,11 @@ bool QGroundControlQmlGlobal::linesIntersect(QPointF line1A, QPointF line1B, QPo
 {
     QPointF intersectPoint;
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+    auto intersect = QLineF(line1A, line1B).intersect(QLineF(line2A, line2B), &intersectPoint);
+#else
     auto intersect = QLineF(line1A, line1B).intersects(QLineF(line2A, line2B), &intersectPoint);
+#endif
 
     return  intersect == QLineF::BoundedIntersection &&
             intersectPoint != line1A && intersectPoint != line1B;
@@ -247,6 +231,10 @@ void QGroundControlQmlGlobal::setFlightMapPosition(QGeoCoordinate& coordinate)
     if (coordinate != flightMapPosition()) {
         _coord.setLatitude(coordinate.latitude());
         _coord.setLongitude(coordinate.longitude());
+        QSettings settings;
+        settings.beginGroup(_flightMapPositionSettingsGroup);
+        settings.setValue(_flightMapPositionLatitudeSettingsKey, _coord.latitude());
+        settings.setValue(_flightMapPositionLongitudeSettingsKey, _coord.longitude());
         emit flightMapPositionChanged(coordinate);
     }
 }
@@ -255,6 +243,9 @@ void QGroundControlQmlGlobal::setFlightMapZoom(double zoom)
 {
     if (zoom != flightMapZoom()) {
         _zoom = zoom;
+        QSettings settings;
+        settings.beginGroup(_flightMapPositionSettingsGroup);
+        settings.setValue(_flightMapZoomSettingsKey, _zoom);
         emit flightMapZoomChanged(zoom);
     }
 }
@@ -270,7 +261,7 @@ QString QGroundControlQmlGlobal::qgcVersion(void) const
     return versionStr;
 }
 
-QString QGroundControlQmlGlobal::altitudeModeExtraUnits(AltMode altMode)
+QString QGroundControlQmlGlobal::altitudeModeExtraUnits(AltitudeMode altMode)
 {
     switch (altMode) {
     case AltitudeModeNone:
@@ -280,20 +271,17 @@ QString QGroundControlQmlGlobal::altitudeModeExtraUnits(AltMode altMode)
         return QString();
     case AltitudeModeAbsolute:
         return tr("(AMSL)");
-    case AltitudeModeCalcAboveTerrain:
-        return tr("(CalcT)");
+    case AltitudeModeAboveTerrain:
+        return tr("(Abv Terr)");
     case AltitudeModeTerrainFrame:
         return tr("(TerrF)");
-    case AltitudeModeMixed:
-        qWarning() << "Internal Error: QGroundControlQmlGlobal::altitudeModeExtraUnits called with altMode == AltitudeModeMixed";
-        return QString();
     }
 
     // Should never get here but makes some compilers happy
     return QString();
 }
 
-QString QGroundControlQmlGlobal::altitudeModeShortDescription(AltMode altMode)
+QString QGroundControlQmlGlobal::altitudeModeShortDescription(AltitudeMode altMode)
 {
     switch (altMode) {
     case AltitudeModeNone:
@@ -301,13 +289,11 @@ QString QGroundControlQmlGlobal::altitudeModeShortDescription(AltMode altMode)
     case AltitudeModeRelative:
         return tr("Relative To Launch");
     case AltitudeModeAbsolute:
-        return tr("AMSL");
-    case AltitudeModeCalcAboveTerrain:
-        return tr("Calc Above Terrain");
+        return tr("Above Mean Sea Level");
+    case AltitudeModeAboveTerrain:
+        return tr("Above Terrain");
     case AltitudeModeTerrainFrame:
         return tr("Terrain Frame");
-    case AltitudeModeMixed:
-        return tr("Mixed Modes");
     }
 
     // Should never get here but makes some compilers happy

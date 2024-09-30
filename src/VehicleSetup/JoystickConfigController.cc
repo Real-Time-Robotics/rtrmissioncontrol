@@ -538,7 +538,6 @@ void JoystickConfigController::_writeCalibration()
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
     if (vehicle) {
         vehicle->setJoystickEnabled(true);
-        vehicle->saveJoystickSettings();
     }
 }
 
@@ -715,7 +714,7 @@ void JoystickConfigController::_activeJoystickChanged(Joystick* joystick)
     }
 }
 
-bool JoystickConfigController::_validAxis(int axis) const
+bool JoystickConfigController::_validAxis(int axis)
 {
     return axis >= 0 && axis < _axisCount;
 }

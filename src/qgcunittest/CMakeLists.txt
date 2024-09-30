@@ -4,10 +4,6 @@ add_library(qgcunittest
 	#FileDialogTest.h
 	#FileManagerTest.cc
 	#FileManagerTest.h
-	ComponentInformationCacheTest.cc
-	ComponentInformationCacheTest.h
-	ComponentInformationTranslationTest.cc
-	ComponentInformationTranslationTest.h
 	GeoTest.cc
 	GeoTest.h
 	#MainWindowTest.cc

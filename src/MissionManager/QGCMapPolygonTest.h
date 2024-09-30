@@ -30,7 +30,6 @@ private slots:
     void _testVertexManipulation(void);
     void _testKMLLoad(void);
     void _testSelectVertex(void);
-    void _testSegmentSplit(void);
 
 private:
     enum {

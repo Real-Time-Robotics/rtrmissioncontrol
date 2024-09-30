@@ -25,7 +25,7 @@ class CorridorScanComplexItem : public TransectStyleComplexItem
 public:
     /// @param flyView true: Created for use in the Fly View, false: Created for use in the Plan View
     /// @param kmlFile Polyline comes from this file, empty for default polyline
-    CorridorScanComplexItem(PlanMasterController* masterController, bool flyView, const QString& kmlFile);
+    CorridorScanComplexItem(PlanMasterController* masterController, bool flyView, const QString& kmlFile, QObject* parent);
 
     Q_PROPERTY(QGCMapPolyline*  corridorPolyline    READ corridorPolyline   CONSTANT)
     Q_PROPERTY(Fact*            corridorWidth       READ corridorWidth      CONSTANT)
@@ -44,9 +44,6 @@ public:
     // Overrides from ComplexMissionItem
     bool    load                (const QJsonObject& complexObject, int sequenceNumber, QString& errorString) final;
     QString mapVisualQML        (void) const final { return QStringLiteral("CorridorScanMapVisual.qml"); }
-    QString presetsSettingsGroup(void) { return settingsGroup; }
-    void    savePreset          (const QString& name);
-    void    loadPreset          (const QString& name);
 
     // Overrides from VisualMissionionItem
     QString             commandDescription  (void) const final { return tr("Corridor Scan"); }
@@ -74,8 +71,6 @@ private slots:
 private:
     double  _calcTransectSpacing    (void) const;
     int     _calcTransectCount      (void) const;
-    void    _saveCommon             (QJsonObject& complexObject);
-    bool    _loadWorker              (const QJsonObject& complexObject, int sequenceNumber, QString& errorString, bool forPresets);
 
     QGCMapPolyline                  _corridorPolyline;
     QList<QList<QGeoCoordinate>>    _transectSegments;      ///< Internal transect segments including grid exit, turnaround and internal camera points

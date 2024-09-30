@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: shptest.c,v 1.8 2016-12-05 12:44:06 erouault Exp $
  *
  * Project:  Shapelib
  * Purpose:  Application for generating sample Shapefiles of various types.
@@ -13,7 +14,7 @@
  * option is discussed in more detail in shapelib.html.
  *
  * --
- *
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -33,14 +34,40 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************
  *
+ * $Log: shptest.c,v $
+ * Revision 1.8  2016-12-05 12:44:06  erouault
+ * * Major overhaul of Makefile build system to use autoconf/automake.
+ *
+ * * Warning fixes in contrib/
+ *
+ * Revision 1.7  2004-09-26 20:09:35  fwarmerdam
+ * avoid rcsid warnings
+ *
+ * Revision 1.6  2002/01/15 14:36:07  warmerda
+ * updated email address
+ *
+ * Revision 1.5  2001/06/22 02:18:20  warmerda
+ * Added null shape support
+ *
+ * Revision 1.4  2000/07/07 13:39:45  warmerda
+ * removed unused variables, and added system include files
+ *
+ * Revision 1.3  1999/11/05 14:12:05  warmerda
+ * updated license terms
+ *
+ * Revision 1.2  1998/12/16 05:15:20  warmerda
+ * Added support for writing multipatch.
+ *
+ * Revision 1.1  1998/11/09 20:18:42  warmerda
+ * Initial revision
+ *
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "shapefil.h"
 
-SHP_CVSID("$Id$")
+SHP_CVSID("$Id: shptest.c,v 1.8 2016-12-05 12:44:06 erouault Exp $")
 
 /************************************************************************/
 /*                          Test_WritePoints()                          */
@@ -51,17 +78,21 @@ SHP_CVSID("$Id$")
 static void Test_WritePoints( int nSHPType, const char *pszFilename )
 
 {
-    SHPHandle hSHPHandle = SHPCreate( pszFilename, nSHPType );
+    SHPHandle	hSHPHandle;
+    SHPObject	*psShape;
+    double	x, y, z, m;
 
-    double x = 1.0;
-    double y = 2.0;
-    double z = 3.0;
-    double m = 4.0;
-    SHPObject *psShape = SHPCreateObject( nSHPType, -1, 0, NULL, NULL,
+    hSHPHandle = SHPCreate( pszFilename, nSHPType );
+
+    x = 1.0;
+    y = 2.0;
+    z = 3.0;
+    m = 4.0;
+    psShape = SHPCreateObject( nSHPType, -1, 0, NULL, NULL,
                                1, &x, &y, &z, &m );
     SHPWriteObject( hSHPHandle, -1, psShape );
     SHPDestroyObject( psShape );
-
+    
     x = 10.0;
     y = 20.0;
     z = 30.0;
@@ -83,28 +114,28 @@ static void Test_WritePoints( int nSHPType, const char *pszFilename )
 static void Test_WriteMultiPoints( int nSHPType, const char *pszFilename )
 
 {
-    double x[4];
-    double y[4];
-    double z[4];
-    double m[4];
+    SHPHandle	hSHPHandle;
+    SHPObject	*psShape;
+    double	x[4], y[4], z[4], m[4];
+    int		i, iShape;
 
-    SHPHandle hSHPHandle = SHPCreate( pszFilename, nSHPType );
+    hSHPHandle = SHPCreate( pszFilename, nSHPType );
 
-    for( int iShape = 0; iShape < 3; iShape++ )
+    for( iShape = 0; iShape < 3; iShape++ )
     {
-        for( int i = 0; i < 4; i++ )
+        for( i = 0; i < 4; i++ )
         {
             x[i] = iShape * 10 + i + 1.15;
             y[i] = iShape * 10 + i + 2.25;
             z[i] = iShape * 10 + i + 3.35;
             m[i] = iShape * 10 + i + 4.45;
         }
-
-        SHPObject *psShape = SHPCreateObject( nSHPType, -1, 0, NULL, NULL,
+        
+        psShape = SHPCreateObject( nSHPType, -1, 0, NULL, NULL,
                                    4, x, y, z, m );
         SHPWriteObject( hSHPHandle, -1, psShape );
         SHPDestroyObject( psShape );
-    }
+    }    
 
     SHPClose( hSHPHandle );
 }
@@ -118,21 +149,21 @@ static void Test_WriteMultiPoints( int nSHPType, const char *pszFilename )
 static void Test_WriteArcPoly( int nSHPType, const char *pszFilename )
 
 {
-    SHPHandle hSHPHandle = SHPCreate( pszFilename, nSHPType );
+    SHPHandle	hSHPHandle;
+    SHPObject	*psShape;
+    double	x[100], y[100], z[100], m[100];
+    int		anPartStart[100];
+    int		anPartType[100], *panPartType;
+    int		i, iShape;
 
-    int anPartType[100];
-    int *panPartType;
+    hSHPHandle = SHPCreate( pszFilename, nSHPType );
+
     if( nSHPType == SHPT_MULTIPATCH )
         panPartType = anPartType;
     else
         panPartType = NULL;
 
-    double x[100];
-    double y[100];
-    double z[100];
-    double m[100];
-
-    for( int iShape = 0; iShape < 3; iShape++ )
+    for( iShape = 0; iShape < 3; iShape++ )
     {
         x[0] = 1.0;
         y[0] = 1.0+iShape*3;
@@ -145,13 +176,13 @@ static void Test_WriteArcPoly( int nSHPType, const char *pszFilename )
         x[4] = 1.0;
         y[4] = 1.0+iShape*3;
 
-        for( int i = 0; i < 5; i++ )
+        for( i = 0; i < 5; i++ )
         {
             z[i] = iShape * 10 + i + 3.35;
             m[i] = iShape * 10 + i + 4.45;
         }
-
-        SHPObject *psShape = SHPCreateObject( nSHPType, -1, 0, NULL, NULL,
+        
+        psShape = SHPCreateObject( nSHPType, -1, 0, NULL, NULL,
                                    5, x, y, z, m );
         SHPWriteObject( hSHPHandle, -1, psShape );
         SHPDestroyObject( psShape );
@@ -194,13 +225,12 @@ static void Test_WriteArcPoly( int nSHPType, const char *pszFilename )
     x[14] = 60;
     y[14] = 20;
 
-    for( int i = 0; i < 15; i++ )
+    for( i = 0; i < 15; i++ )
     {
         z[i] = i;
         m[i] = i*2;
     }
 
-    int anPartStart[100];
     anPartStart[0] = 0;
     anPartStart[1] = 5;
     anPartStart[2] = 10;
@@ -208,12 +238,12 @@ static void Test_WriteArcPoly( int nSHPType, const char *pszFilename )
     anPartType[0] = SHPP_RING;
     anPartType[1] = SHPP_INNERRING;
     anPartType[2] = SHPP_INNERRING;
-
-    SHPObject *psShape = SHPCreateObject( nSHPType, -1, 3, anPartStart, panPartType,
+    
+    psShape = SHPCreateObject( nSHPType, -1, 3, anPartStart, panPartType,
                                15, x, y, z, m );
     SHPWriteObject( hSHPHandle, -1, psShape );
     SHPDestroyObject( psShape );
-
+    
 
     SHPClose( hSHPHandle );
 }
@@ -221,7 +251,9 @@ static void Test_WriteArcPoly( int nSHPType, const char *pszFilename )
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
-int main( int argc, char ** argv ) {
+int main( int argc, char ** argv )
+
+{
 /* -------------------------------------------------------------------- */
 /*      Display a usage message.                                        */
 /* -------------------------------------------------------------------- */
@@ -265,7 +297,7 @@ int main( int argc, char ** argv ) {
         Test_WriteArcPoly( SHPT_POLYGONZ, "test11.shp" );
     else if( atoi(argv[1]) == 12 )
         Test_WriteArcPoly( SHPT_POLYGONM, "test12.shp" );
-
+    
     else if( atoi(argv[1]) == 13 )
         Test_WriteArcPoly( SHPT_MULTIPATCH, "test13.shp" );
     else

@@ -20,13 +20,13 @@
 
 QGC_LOGGING_CATEGORY(VTOLLandingComplexItemLog, "VTOLLandingComplexItemLog")
 
-const QString VTOLLandingComplexItem::name(VTOLLandingComplexItem::tr("VTOL Landing"));
+const QString VTOLLandingComplexItem::name(tr("VTOL Landing"));
 
 const char* VTOLLandingComplexItem::settingsGroup =            "VTOLLanding";
 const char* VTOLLandingComplexItem::jsonComplexItemTypeValue = "vtolLandingPattern";
 
-VTOLLandingComplexItem::VTOLLandingComplexItem(PlanMasterController* masterController, bool flyView)
-    : LandingComplexItem        (masterController, flyView)
+VTOLLandingComplexItem::VTOLLandingComplexItem(PlanMasterController* masterController, bool flyView, QObject* parent)
+    : LandingComplexItem        (masterController, flyView, parent)
     , _metaDataMap              (FactMetaData::createMapFromJsonFile(QStringLiteral(":/json/VTOLLandingPattern.FactMetaData.json"), this))
     , _landingDistanceFact      (settingsGroup, _metaDataMap[finalApproachToLandDistanceName])
     , _finalApproachAltitudeFact(settingsGroup, _metaDataMap[finalApproachAltitudeName])

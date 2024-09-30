@@ -1,6 +1,6 @@
 
 include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}
+	.
 	${CMAKE_CURRENT_BINARY_DIR}
 	${Qt5Location_PRIVATE_INCLUDE_DIRS}
 	VideoManager
@@ -13,6 +13,23 @@ if(MOBILE)
 		MobileScreenMgr.cc
 		MobileScreenMgr.h
 	)
+endif()
+if(GST_FOUND)
+	# TODO: Transform those in targets.
+	list(APPEND EXTRA_SRC
+		Taisync/TaisyncManager.cc
+		Taisync/TaisyncHandler.cc
+		Taisync/TaisyncSettings.cc
+		Microhard/MicrohardManager.cc
+		Microhard/MicrohardHandler.cc
+		Microhard/MicrohardSettings.cc
+	)
+	if(ANDROID) # Should also be expanded to iOS
+		list(APPEND EXTRA_SRC
+			Taisync/TaisyncTelemetry.cc
+			Taisync/TaisyncVideoReceiver.cc
+		)
+	endif()
 endif()
 
 if(BUILD_TESTING)
@@ -32,8 +49,6 @@ if(BUILD_TESTING)
 
 	add_subdirectory(qgcunittest)
 
-	add_qgc_test(ComponentInformationCacheTest)
-	add_qgc_test(ComponentInformationTranslationTest)
 	add_qgc_test(CameraCalcTest)
 	add_qgc_test(CameraSectionTest)
 	add_qgc_test(CorridorScanComplexItemTest)
@@ -85,11 +100,11 @@ add_library(qgc
 	QGC.h
 	QGCApplication.cc
 	QGCApplication.h
-	QGCCachedFileDownload.cc
-	QGCCachedFileDownload.h
 	QGCComboBox.cc
 	QGCComboBox.h
 	QGCConfig.h
+	QGCDockWidget.cc
+	QGCDockWidget.h
 	QGCFileDownload.cc
 	QGCFileDownload.h
 	QGCLoggingCategory.cc
@@ -104,6 +119,8 @@ add_library(qgc
 	QGCTemporaryFile.h
 	QGCToolbox.cc
 	QGCToolbox.h
+	QGCZlib.cc
+	QGCZlib.h
 	RunGuard.cc
 	RunGuard.h
 	ShapeFileHelper.cc
@@ -115,18 +132,18 @@ add_library(qgc
 	TerrainTile.h
 )
 
-set_source_files_properties(QGCApplication.cc PROPERTIES COMPILE_DEFINITIONS APP_VERSION_STR="${APP_VERSION_STR}")
+set_source_files_properties(QGCApplication.cc PROPERTIES COMPILE_DEFINITIONS GIT_VERSION="${GIT_VERSION}")
 
 add_subdirectory(ui)
 
 add_subdirectory(ADSB)
+add_subdirectory(Airmap)
 add_subdirectory(AnalyzeView)
 add_subdirectory(api)
 add_subdirectory(Audio)
 add_subdirectory(AutoPilotPlugins)
 add_subdirectory(Camera)
 add_subdirectory(comm)
-add_subdirectory(Compression)
 add_subdirectory(FactSystem)
 add_subdirectory(FirmwarePlugin)
 add_subdirectory(FlightDisplay)
@@ -135,18 +152,12 @@ add_subdirectory(FollowMe)
 add_subdirectory(Geo)
 add_subdirectory(GPS)
 add_subdirectory(Joystick)
-if (${QGC_GST_MICROHARD_ENABLED})
-  add_subdirectory(Microhard)
-endif ()
 add_subdirectory(MissionManager)
 add_subdirectory(PlanView)
 add_subdirectory(PositionManager)
 add_subdirectory(QmlControls)
 add_subdirectory(QtLocationPlugin)
 add_subdirectory(Settings)
-if (${QGC_GST_TAISYNC_ENABLED})
-  add_subdirectory(Taisync)
-endif ()
 add_subdirectory(Terrain)
 add_subdirectory(uas)
 add_subdirectory(Vehicle)
@@ -157,20 +168,21 @@ add_subdirectory(VideoReceiver)
 target_link_libraries(qgc
 	PRIVATE
 		shp
-		Qt5::QuickControls2
+                Qt5::QuickControls2
+                z # zlib
 
 	PUBLIC
 		Qt5::QuickWidgets
 		Qt5::Widgets
 
-		ADSB
+                ADSB
+		Airmap
 		AnalyzeView
 		api
 		Audio
 		AutoPilotPlugins
 		Camera
 		comm
-		compression
 		FactSystem
 		FirmwarePlugin
 		FlightMap
@@ -189,19 +201,7 @@ target_link_libraries(qgc
 		Vehicle
 		VehicleSetup
 		VideoManager
-		z # zlib
 )
-
-if(GST_FOUND)
-	if (${QGC_GST_MICROHARD_ENABLED})
-		target_compile_definitions(qgc PUBLIC QGC_GST_MICROHARD_ENABLED)
-		target_link_libraries(qgc PUBLIC Microhard)
-	endif()
-	if (${QGC_GST_TAISYNC_ENABLED})
-		target_compile_definitions(qgc PUBLIC QGC_GST_TAISYNC_ENABLED)
-		target_link_libraries(qgc PUBLIC Taisync)
-	endif()
-endif()
 
 if(BUILD_TESTING)
 	target_link_libraries(qgc PUBLIC qgcunittest)

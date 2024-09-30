@@ -19,10 +19,8 @@ exists($${OUT_PWD}/qgroundcontrol.pro) {
 
 message(Qt version $$[QT_VERSION])
 
-!contains(CONFIG, DISABLE_QT_VERSION_CHECK) {
-    !equals(QT_MAJOR_VERSION, 5) | !equals(QT_MINOR_VERSION, 15) {
-        error("Unsupported Qt version, 5.15 is required")
-    }
+!equals(QT_MAJOR_VERSION, 5) | !greaterThan(QT_MINOR_VERSION, 10) {
+    error("Unsupported Qt version, 5.11+ is required")
 }
 
 include(QGCCommon.pri)
@@ -45,10 +43,7 @@ MacBuild {
 }
 
 LinuxBuild {
-    CONFIG += qesp_linux_udev
-    system("$$QMAKE_LINK -fuse-ld=gold -Wl,--version &>/dev/null") {
-        CONFIG += use_gold_linker
-    }
+    CONFIG  += qesp_linux_udev
 }
 
 WindowsBuild {
@@ -67,10 +62,8 @@ QGC_APP_DESCRIPTION = "Open source ground control app provided by QGroundControl
 QGC_APP_COPYRIGHT   = "Copyright (C) 2019 QGroundControl Development Team. All rights reserved."
 
 WindowsBuild {
-    QGC_INSTALLER_SCRIPT        = "$$SOURCE_DIR\\deploy\\windows\\nullsoft_installer.nsi"
-    QGC_INSTALLER_ICON          = "$$SOURCE_DIR\\deploy\\windows\\WindowsQGC.ico"
-    QGC_INSTALLER_HEADER_BITMAP = "$$SOURCE_DIR\\deploy\\windows\\installheader.bmp"
-    QGC_INSTALLER_DRIVER_MSI    = "$$SOURCE_DIR\\deploy\\windows\\driver.msi"
+    QGC_INSTALLER_ICON          = "$$SOURCE_DIR\\windows\\WindowsQGC.ico"
+    QGC_INSTALLER_HEADER_BITMAP = "$$SOURCE_DIR\\windows\\installheader.bmp"
 }
 
 # Load additional config flags from user_config.pri
@@ -182,12 +175,13 @@ contains (CONFIG, QGC_DISABLE_PX4_PLUGIN_FACTORY) {
 
 # Bluetooth
 contains (DEFINES, QGC_DISABLE_BLUETOOTH) {
-    message("Bluetooth support disabled (manual override from command line)")
+    message("Skipping support for Bluetooth (manual override from command line)")
     DEFINES -= QGC_ENABLE_BLUETOOTH
 } else:exists(user_config.pri):infile(user_config.pri, DEFINES, QGC_DISABLE_BLUETOOTH) {
-    message("Bluetooth support disabled (manual override from user_config.pri)")
+    message("Skipping support for Bluetooth (manual override from user_config.pri)")
     DEFINES -= QGC_ENABLE_BLUETOOTH
 } else:exists(user_config.pri):infile(user_config.pri, DEFINES, QGC_ENABLE_BLUETOOTH) {
+    message("Including support for Bluetooth (manual override from user_config.pri)")
     DEFINES += QGC_ENABLE_BLUETOOTH
 }
 
@@ -224,7 +218,8 @@ LinuxBuild {
 # Qt configuration
 
 CONFIG += qt \
-    thread
+    thread \
+    c++11
 
 DebugBuild {
     CONFIG -= qtquickcompiler
@@ -356,22 +351,14 @@ CustomBuild {
         RESOURCES += $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc
     }
 } else {
-# DEFINES += QGC_APPLICATION_NAME=\"\\\"QGroundControl\\\"\"
-#    DEFINES += QGC_ORG_NAME=\"\\\"QGroundControl.org\\\"\"
-#    DEFINES += QGC_ORG_DOMAIN=\"\\\"org.qgroundcontrol\\\"\"
-#   RESOURCES += \
-#        $$PWD/qgroundcontrol.qrc \
-#        $$PWD/qgcresources.qrc \
-#        $$PWD/qgcimages.qrc \
-#        $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc \
-    DEFINES += QGC_APPLICATION_NAME=\"\\\"RTR Mission Control\\\"\"
-    DEFINES += QGC_ORG_NAME=\"\\\"RTRMissionControl.org\\\"\"
+    DEFINES += QGC_APPLICATION_NAME=\"\\\"RTRMissionControl\\\"\"
+    DEFINES += QGC_ORG_NAME=\"\\\"realtimerobotics.org\\\"\"
     DEFINES += QGC_ORG_DOMAIN=\"\\\"org.qgroundcontrol\\\"\"
     RESOURCES += \
         $$PWD/qgroundcontrol.qrc \
         $$PWD/qgcresources.qrc \
         $$PWD/qgcimages.qrc \
-            $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc \
+        $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc \
 }
 
 #
@@ -396,14 +383,12 @@ INCLUDEPATH += \
     src/api \
     src/AnalyzeView \
     src/Camera \
-    src/Compression \
     src/AutoPilotPlugins \
     src/FlightDisplay \
     src/FlightMap \
     src/FlightMap/Widgets \
     src/FollowMe \
     src/Geo \
-    src/Gimbal \
     src/GPS \
     src/Joystick \
     src/PlanView \
@@ -439,8 +424,6 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 #
 
 HEADERS += \
-    src/QmlControls/CustomAction.h \
-    src/QmlControls/CustomActionManager.h \
     src/QmlControls/QmlUnitsConversion.h \
     src/Vehicle/VehicleEscStatusFactGroup.h \
     src/api/QGCCorePlugin.h \
@@ -455,7 +438,6 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
 }
 
 SOURCES += \
-    src/QmlControls/CustomActionManager.cc \
     src/Vehicle/VehicleEscStatusFactGroup.cc \
     src/api/QGCCorePlugin.cc \
     src/api/QGCOptions.cc \
@@ -506,15 +488,12 @@ DebugBuild { PX4FirmwarePlugin { PX4FirmwarePluginFactory { APMFirmwarePlugin { 
         src/MissionManager/TransectStyleComplexItemTest.h \
         src/MissionManager/TransectStyleComplexItemTestBase.h \
         src/MissionManager/VisualMissionItemTest.h \
-        src/qgcunittest/ComponentInformationCacheTest.h \
-        src/qgcunittest/ComponentInformationTranslationTest.h \
         src/qgcunittest/GeoTest.h \
         src/qgcunittest/MavlinkLogTest.h \
         src/qgcunittest/MultiSignalSpy.h \
         src/qgcunittest/MultiSignalSpyV2.h \
         src/qgcunittest/UnitTest.h \
         src/Vehicle/FTPManagerTest.h \
-        src/Vehicle/InitialConnectTest.h \
         src/Vehicle/RequestMessageTest.h \
         src/Vehicle/SendMavCommandWithHandlerTest.h \
         src/Vehicle/SendMavCommandWithSignallingTest.h \
@@ -555,8 +534,6 @@ DebugBuild { PX4FirmwarePlugin { PX4FirmwarePluginFactory { APMFirmwarePlugin { 
         src/MissionManager/TransectStyleComplexItemTest.cc \
         src/MissionManager/TransectStyleComplexItemTestBase.cc \
         src/MissionManager/VisualMissionItemTest.cc \
-        src/qgcunittest/ComponentInformationCacheTest.cc \
-        src/qgcunittest/ComponentInformationTranslationTest.cc \
         src/qgcunittest/GeoTest.cc \
         src/qgcunittest/MavlinkLogTest.cc \
         src/qgcunittest/MultiSignalSpy.cc \
@@ -564,7 +541,6 @@ DebugBuild { PX4FirmwarePlugin { PX4FirmwarePluginFactory { APMFirmwarePlugin { 
         src/qgcunittest/UnitTest.cc \
         src/qgcunittest/UnitTestList.cc \
         src/Vehicle/FTPManagerTest.cc \
-        src/Vehicle/InitialConnectTest.cc \
         src/Vehicle/RequestMessageTest.cc \
         src/Vehicle/SendMavCommandWithHandlerTest.cc \
         src/Vehicle/SendMavCommandWithSignallingTest.cc \
@@ -588,18 +564,14 @@ HEADERS += \
     src/AnalyzeView/ULogParser.h \
     src/AnalyzeView/MavlinkConsoleController.h \
     src/Audio/AudioOutput.h \
-    src/Vehicle/Autotune.h \
     src/Camera/QGCCameraControl.h \
     src/Camera/QGCCameraIO.h \
     src/Camera/QGCCameraManager.h \
     src/CmdLineOptParser.h \
-    src/Compression/QGCLZMA.h \
-    src/Compression/QGCZlib.h \
     src/FirmwarePlugin/PX4/px4_custom_mode.h \
     src/FollowMe/FollowMe.h \
     src/Joystick/Joystick.h \
     src/Joystick/JoystickManager.h \
-    src/Joystick/JoystickMavCommand.h \
     src/JsonHelper.h \
     src/KMLDomDocument.h \
     src/KMLHelper.h \
@@ -656,10 +628,8 @@ HEADERS += \
     src/Geo/MGRS.hpp \
     src/Geo/TransverseMercator.hpp \
     src/Geo/PolarStereographic.hpp \
-    src/Gimbal/GimbalController.h \
     src/QGC.h \
     src/QGCApplication.h \
-    src/QGCCachedFileDownload.h \
     src/QGCComboBox.h \
     src/QGCConfig.h \
     src/QGCFileDownload.h \
@@ -669,6 +639,7 @@ HEADERS += \
     src/QGCQGeoCoordinate.h \
     src/QGCTemporaryFile.h \
     src/QGCToolbox.h \
+    src/QGCZlib.h \
     src/QmlControls/AppMessages.h \
     src/QmlControls/EditPositionDialogController.h \
     src/QmlControls/FlightPathSegment.h \
@@ -692,7 +663,6 @@ HEADERS += \
     src/Settings/AppSettings.h \
     src/Settings/AutoConnectSettings.h \
     src/Settings/BrandImageSettings.h \
-    src/Settings/RemoteIDSettings.h \
     src/Settings/FirmwareUpgradeSettings.h \
     src/Settings/FlightMapSettings.h \
     src/Settings/FlyViewSettings.h \
@@ -703,39 +673,20 @@ HEADERS += \
     src/Settings/SettingsManager.h \
     src/Settings/UnitsSettings.h \
     src/Settings/VideoSettings.h \
-    src/Settings/GimbalControllerSettings.h \
     src/ShapeFileHelper.h \
     src/SHPFileHelper.h \
     src/Terrain/TerrainQuery.h \
     src/TerrainTile.h \
-    src/Vehicle/Actuators/ActuatorActions.h \
-    src/Vehicle/Actuators/Actuators.h \
-    src/Vehicle/Actuators/ActuatorOutputs.h \
-    src/Vehicle/Actuators/ActuatorTesting.h \
-    src/Vehicle/Actuators/Common.h \
-    src/Vehicle/Actuators/GeometryImage.h \
-    src/Vehicle/Actuators/Mixer.h \
-    src/Vehicle/Actuators/MotorAssignment.h \
     src/Vehicle/CompInfo.h \
-    src/Vehicle/CompInfoActuators.h \
-    src/Vehicle/CompInfoEvents.h \
     src/Vehicle/CompInfoParam.h \
-    src/Vehicle/CompInfoGeneral.h \
-    src/Vehicle/ComponentInformationCache.h \
+    src/Vehicle/CompInfoVersion.h \
     src/Vehicle/ComponentInformationManager.h \
-    src/Vehicle/ComponentInformationTranslation.h \
-    src/Vehicle/EventHandler.h \
     src/Vehicle/FTPManager.h \
     src/Vehicle/GPSRTKFactGroup.h \
-    src/Vehicle/HealthAndArmingCheckReport.h \
-    src/Vehicle/ImageProtocolManager.h \
     src/Vehicle/InitialConnectStateMachine.h \
     src/Vehicle/MAVLinkLogManager.h \
-    src/Vehicle/MAVLinkStreamConfig.h \
     src/Vehicle/MultiVehicleManager.h \
-    src/Vehicle/RemoteIDManager.h \
     src/Vehicle/StateMachine.h \
-    src/Vehicle/StandardModes.h \
     src/Vehicle/SysStatusSensorInfo.h \
     src/Vehicle/TerrainFactGroup.h \
     src/Vehicle/TerrainProtocolHandler.h \
@@ -746,18 +697,12 @@ HEADERS += \
     src/Vehicle/VehicleClockFactGroup.h \
     src/Vehicle/VehicleDistanceSensorFactGroup.h \
     src/Vehicle/VehicleEstimatorStatusFactGroup.h \
-    src/Vehicle/VehicleLocalPositionFactGroup.h \
-    src/Vehicle/VehicleLocalPositionSetpointFactGroup.h \
     src/Vehicle/VehicleGPSFactGroup.h \
-    src/Vehicle/VehicleGPS2FactGroup.h \
     src/Vehicle/VehicleLinkManager.h \
     src/Vehicle/VehicleSetpointFactGroup.h \
     src/Vehicle/VehicleTemperatureFactGroup.h \
     src/Vehicle/VehicleVibrationFactGroup.h \
     src/Vehicle/VehicleWindFactGroup.h \
-    src/Vehicle/VehicleHygrometerFactGroup.h \
-    src/Vehicle/VehicleGeneratorFactGroup.h \
-    src/Vehicle/VehicleEFIFactGroup.h \
     src/VehicleSetup/JoystickConfigController.h \
     src/comm/LinkConfiguration.h \
     src/comm/LinkInterface.h \
@@ -810,7 +755,7 @@ contains (DEFINES, QGC_ENABLE_PAIRING) {
     }
 }
 
-!contains(DEFINES, NO_SERIAL_LINK) {
+!NoSerialBuild {
 HEADERS += \
     src/comm/QGCSerialPortInfo.h \
     src/comm/SerialLink.h \
@@ -829,8 +774,7 @@ HEADERS += \
     src/GPS/RTCM/RTCMMavlink.h \
     src/GPS/definitions.h \
     src/GPS/satellite_info.h \
-    src/GPS/sensor_gps.h \
-    src/GPS/sensor_gnss_relative.h \
+    src/GPS/vehicle_gps_position.h \
     src/Joystick/JoystickSDL.h \
     src/RunGuard.h \
 }
@@ -853,17 +797,13 @@ SOURCES += \
     src/AnalyzeView/ULogParser.cc \
     src/AnalyzeView/MavlinkConsoleController.cc \
     src/Audio/AudioOutput.cc \
-    src/Vehicle/Autotune.cpp \
     src/Camera/QGCCameraControl.cc \
     src/Camera/QGCCameraIO.cc \
     src/Camera/QGCCameraManager.cc \
     src/CmdLineOptParser.cc \
-    src/Compression/QGCLZMA.cc \
-    src/Compression/QGCZlib.cc \
     src/FollowMe/FollowMe.cc \
     src/Joystick/Joystick.cc \
     src/Joystick/JoystickManager.cc \
-    src/Joystick/JoystickMavCommand.cc \
     src/JsonHelper.cc \
     src/KMLDomDocument.cc \
     src/KMLHelper.cc \
@@ -918,10 +858,8 @@ SOURCES += \
     src/Geo/MGRS.cpp \
     src/Geo/TransverseMercator.cpp \
     src/Geo/PolarStereographic.cpp \
-    src/Gimbal/GimbalController.cc \
     src/QGC.cc \
     src/QGCApplication.cc \
-    src/QGCCachedFileDownload.cc \
     src/QGCComboBox.cc \
     src/QGCFileDownload.cc \
     src/QGCLoggingCategory.cc \
@@ -930,6 +868,7 @@ SOURCES += \
     src/QGCQGeoCoordinate.cc \
     src/QGCTemporaryFile.cc \
     src/QGCToolbox.cc \
+    src/QGCZlib.cc \
     src/QmlControls/AppMessages.cc \
     src/QmlControls/EditPositionDialogController.cc \
     src/QmlControls/FlightPathSegment.cc \
@@ -953,7 +892,6 @@ SOURCES += \
     src/Settings/AppSettings.cc \
     src/Settings/AutoConnectSettings.cc \
     src/Settings/BrandImageSettings.cc \
-    src/Settings/RemoteIDSettings.cc \
     src/Settings/FirmwareUpgradeSettings.cc \
     src/Settings/FlightMapSettings.cc \
     src/Settings/FlyViewSettings.cc \
@@ -964,39 +902,20 @@ SOURCES += \
     src/Settings/SettingsManager.cc \
     src/Settings/UnitsSettings.cc \
     src/Settings/VideoSettings.cc \
-    src/Settings/GimbalControllerSettings.cc \
     src/ShapeFileHelper.cc \
     src/SHPFileHelper.cc \
     src/Terrain/TerrainQuery.cc \
     src/TerrainTile.cc\
-    src/Vehicle/Actuators/ActuatorActions.cc \
-    src/Vehicle/Actuators/Actuators.cc \
-    src/Vehicle/Actuators/ActuatorOutputs.cc \
-    src/Vehicle/Actuators/ActuatorTesting.cc \
-    src/Vehicle/Actuators/Common.cc \
-    src/Vehicle/Actuators/GeometryImage.cc \
-    src/Vehicle/Actuators/Mixer.cc \
-    src/Vehicle/Actuators/MotorAssignment.cc \
     src/Vehicle/CompInfo.cc \
-    src/Vehicle/CompInfoActuators.cc \
-    src/Vehicle/CompInfoEvents.cc \
     src/Vehicle/CompInfoParam.cc \
-    src/Vehicle/CompInfoGeneral.cc \
-    src/Vehicle/ComponentInformationCache.cc \
+    src/Vehicle/CompInfoVersion.cc \
     src/Vehicle/ComponentInformationManager.cc \
-    src/Vehicle/ComponentInformationTranslation.cc \
-    src/Vehicle/EventHandler.cc \
     src/Vehicle/FTPManager.cc \
     src/Vehicle/GPSRTKFactGroup.cc \
-    src/Vehicle/HealthAndArmingCheckReport.cc \
-    src/Vehicle/ImageProtocolManager.cc \
     src/Vehicle/InitialConnectStateMachine.cc \
     src/Vehicle/MAVLinkLogManager.cc \
-    src/Vehicle/MAVLinkStreamConfig.cc \
     src/Vehicle/MultiVehicleManager.cc \
-    src/Vehicle/RemoteIDManager.cc \
     src/Vehicle/StateMachine.cc \
-    src/Vehicle/StandardModes.cc \
     src/Vehicle/SysStatusSensorInfo.cc \
     src/Vehicle/TerrainFactGroup.cc \
     src/Vehicle/TerrainProtocolHandler.cc \
@@ -1007,17 +926,11 @@ SOURCES += \
     src/Vehicle/VehicleClockFactGroup.cc \
     src/Vehicle/VehicleDistanceSensorFactGroup.cc \
     src/Vehicle/VehicleEstimatorStatusFactGroup.cc \
-    src/Vehicle/VehicleLocalPositionFactGroup.cc \
-    src/Vehicle/VehicleLocalPositionSetpointFactGroup.cc \
     src/Vehicle/VehicleGPSFactGroup.cc \
-    src/Vehicle/VehicleGPS2FactGroup.cc \
     src/Vehicle/VehicleLinkManager.cc \
     src/Vehicle/VehicleSetpointFactGroup.cc \
     src/Vehicle/VehicleTemperatureFactGroup.cc \
     src/Vehicle/VehicleVibrationFactGroup.cc \
-    src/Vehicle/VehicleHygrometerFactGroup.cc \
-    src/Vehicle/VehicleGeneratorFactGroup.cc \
-    src/Vehicle/VehicleEFIFactGroup.cc \
     src/Vehicle/VehicleWindFactGroup.cc \
     src/VehicleSetup/JoystickConfigController.cc \
     src/comm/LinkConfiguration.cc \
@@ -1047,7 +960,7 @@ SOURCES += \
     src/comm/MockLinkMissionItemHandler.cc \
 }
 
-!contains(DEFINES, NO_SERIAL_LINK) {
+!NoSerialBuild {
 SOURCES += \
     src/comm/QGCSerialPortInfo.cc \
     src/comm/SerialLink.cc \
@@ -1102,7 +1015,7 @@ HEADERS+= \
     src/FirmwarePlugin/FirmwarePluginManager.h \
     src/VehicleSetup/VehicleComponent.h \
 
-!MobileBuild { !contains(DEFINES, NO_SERIAL_LINK) {
+!MobileBuild { !NoSerialBuild {
     HEADERS += \
         src/VehicleSetup/Bootloader.h \
         src/VehicleSetup/FirmwareImage.h \
@@ -1124,7 +1037,7 @@ SOURCES += \
     src/FirmwarePlugin/FirmwarePluginManager.cc \
     src/VehicleSetup/VehicleComponent.cc \
 
-!MobileBuild { !contains(DEFINES, NO_SERIAL_LINK) {
+!MobileBuild { !NoSerialBuild {
     SOURCES += \
         src/VehicleSetup/Bootloader.cc \
         src/VehicleSetup/FirmwareImage.cc \
@@ -1156,6 +1069,7 @@ APMFirmwarePlugin {
         src/AutoPilotPlugins/APM/APMAirframeComponentController.h \
         src/AutoPilotPlugins/APM/APMAutoPilotPlugin.h \
         src/AutoPilotPlugins/APM/APMCameraComponent.h \
+        src/AutoPilotPlugins/APM/APMCompassCal.h \
         src/AutoPilotPlugins/APM/APMFlightModesComponent.h \
         src/AutoPilotPlugins/APM/APMFlightModesComponentController.h \
         src/AutoPilotPlugins/APM/APMFollowComponent.h \
@@ -1171,7 +1085,6 @@ APMFirmwarePlugin {
         src/AutoPilotPlugins/APM/APMSensorsComponentController.h \
         src/AutoPilotPlugins/APM/APMSubMotorComponentController.h \
         src/AutoPilotPlugins/APM/APMTuningComponent.h \
-        src/AutoPilotPlugins/APM/APMRemoteSupportComponent.h \
         src/FirmwarePlugin/APM/APMFirmwarePlugin.h \
         src/FirmwarePlugin/APM/APMParameterMetaData.h \
         src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.h \
@@ -1184,6 +1097,7 @@ APMFirmwarePlugin {
         src/AutoPilotPlugins/APM/APMAirframeComponentController.cc \
         src/AutoPilotPlugins/APM/APMAutoPilotPlugin.cc \
         src/AutoPilotPlugins/APM/APMCameraComponent.cc \
+        src/AutoPilotPlugins/APM/APMCompassCal.cc \
         src/AutoPilotPlugins/APM/APMFlightModesComponent.cc \
         src/AutoPilotPlugins/APM/APMFlightModesComponentController.cc \
         src/AutoPilotPlugins/APM/APMFollowComponent.cc \
@@ -1199,7 +1113,6 @@ APMFirmwarePlugin {
         src/AutoPilotPlugins/APM/APMSensorsComponentController.cc \
         src/AutoPilotPlugins/APM/APMSubMotorComponentController.cc \
         src/AutoPilotPlugins/APM/APMTuningComponent.cc \
-        src/AutoPilotPlugins/APM/APMRemoteSupportComponent.cc \
         src/FirmwarePlugin/APM/APMFirmwarePlugin.cc \
         src/FirmwarePlugin/APM/APMParameterMetaData.cc \
         src/FirmwarePlugin/APM/ArduCopterFirmwarePlugin.cc \
@@ -1223,15 +1136,14 @@ PX4FirmwarePlugin {
         src/FirmwarePlugin/PX4 \
 
     HEADERS+= \
-        src/AutoPilotPlugins/PX4/ActuatorComponent.h \
         src/AutoPilotPlugins/PX4/AirframeComponent.h \
         src/AutoPilotPlugins/PX4/AirframeComponentAirframes.h \
         src/AutoPilotPlugins/PX4/AirframeComponentController.h \
         src/AutoPilotPlugins/PX4/CameraComponent.h \
         src/AutoPilotPlugins/PX4/FlightModesComponent.h \
+        src/AutoPilotPlugins/PX4/PX4AdvancedFlightModesController.h \
         src/AutoPilotPlugins/PX4/PX4AirframeLoader.h \
         src/AutoPilotPlugins/PX4/PX4AutoPilotPlugin.h \
-        src/AutoPilotPlugins/PX4/PX4FlightBehavior.h \
         src/AutoPilotPlugins/PX4/PX4RadioComponent.h \
         src/AutoPilotPlugins/PX4/PX4SimpleFlightModesController.h \
         src/AutoPilotPlugins/PX4/PX4TuningComponent.h \
@@ -1244,15 +1156,14 @@ PX4FirmwarePlugin {
         src/FirmwarePlugin/PX4/PX4ParameterMetaData.h \
 
     SOURCES += \
-        src/AutoPilotPlugins/PX4/ActuatorComponent.cc \
         src/AutoPilotPlugins/PX4/AirframeComponent.cc \
         src/AutoPilotPlugins/PX4/AirframeComponentAirframes.cc \
         src/AutoPilotPlugins/PX4/AirframeComponentController.cc \
         src/AutoPilotPlugins/PX4/CameraComponent.cc \
         src/AutoPilotPlugins/PX4/FlightModesComponent.cc \
+        src/AutoPilotPlugins/PX4/PX4AdvancedFlightModesController.cc \
         src/AutoPilotPlugins/PX4/PX4AirframeLoader.cc \
         src/AutoPilotPlugins/PX4/PX4AutoPilotPlugin.cc \
-        src/AutoPilotPlugins/PX4/PX4FlightBehavior.cc \
         src/AutoPilotPlugins/PX4/PX4RadioComponent.cc \
         src/AutoPilotPlugins/PX4/PX4SimpleFlightModesController.cc \
         src/AutoPilotPlugins/PX4/PX4TuningComponent.cc \
@@ -1298,10 +1209,7 @@ SOURCES += \
 
 #-------------------------------------------------------------------------------------
 # MAVLink Inspector
-
-contains (DEFINES, QGC_DISABLE_MAVLINK_INSPECTOR) {
-    message("Disable mavlink inspector")
-} else {
+contains (DEFINES, QGC_ENABLE_MAVLINK_INSPECTOR) {
     HEADERS += \
         src/AnalyzeView/MAVLinkInspectorController.h
     SOURCES += \
@@ -1363,6 +1271,92 @@ contains (DEFINES, QGC_GST_MICROHARD_DISABLED) {
             src/Microhard/MicrohardHandler.cc \
             src/Microhard/MicrohardSettings.cc \
     }
+}
+#-------------------------------------------------------------------------------------
+# AirMap
+
+contains (DEFINES, QGC_AIRMAP_ENABLED) {
+
+    #-- These should be always enabled but not yet
+    INCLUDEPATH += \
+        src/AirspaceManagement
+
+    HEADERS += \
+        src/AirspaceManagement/AirspaceAdvisoryProvider.h \
+        src/AirspaceManagement/AirspaceFlightPlanProvider.h \
+        src/AirspaceManagement/AirspaceManager.h \
+        src/AirspaceManagement/AirspaceRestriction.h \
+        src/AirspaceManagement/AirspaceRestrictionProvider.h \
+        src/AirspaceManagement/AirspaceRulesetsProvider.h \
+        src/AirspaceManagement/AirspaceVehicleManager.h \
+        src/AirspaceManagement/AirspaceWeatherInfoProvider.h \
+
+    SOURCES += \
+        src/AirspaceManagement/AirspaceAdvisoryProvider.cc \
+        src/AirspaceManagement/AirspaceFlightPlanProvider.cc \
+        src/AirspaceManagement/AirspaceManager.cc \
+        src/AirspaceManagement/AirspaceRestriction.cc \
+        src/AirspaceManagement/AirspaceRestrictionProvider.cc \
+        src/AirspaceManagement/AirspaceRulesetsProvider.cc \
+        src/AirspaceManagement/AirspaceVehicleManager.cc \
+        src/AirspaceManagement/AirspaceWeatherInfoProvider.cc \
+
+    #-- This is the AirMap implementation of the above
+    RESOURCES += \
+        src/Airmap/airmap.qrc
+
+    INCLUDEPATH += \
+        src/Airmap
+
+    HEADERS += \
+        src/Airmap/AirMapAdvisoryManager.h \
+        src/Airmap/AirMapFlightManager.h \
+        src/Airmap/AirMapFlightPlanManager.h \
+        src/Airmap/AirMapManager.h \
+        src/Airmap/AirMapRestrictionManager.h \
+        src/Airmap/AirMapRulesetsManager.h \
+        src/Airmap/AirMapSettings.h \
+        src/Airmap/AirMapSharedState.h \
+        src/Airmap/AirMapTelemetry.h \
+        src/Airmap/AirMapTrafficMonitor.h \
+        src/Airmap/AirMapVehicleManager.h \
+        src/Airmap/AirMapWeatherInfoManager.h \
+        src/Airmap/LifetimeChecker.h \
+
+    SOURCES += \
+        src/Airmap/AirMapAdvisoryManager.cc \
+        src/Airmap/AirMapFlightManager.cc \
+        src/Airmap/AirMapFlightPlanManager.cc \
+        src/Airmap/AirMapManager.cc \
+        src/Airmap/AirMapRestrictionManager.cc \
+        src/Airmap/AirMapRulesetsManager.cc \
+        src/Airmap/AirMapSettings.cc \
+        src/Airmap/AirMapSharedState.cc \
+        src/Airmap/AirMapTelemetry.cc \
+        src/Airmap/AirMapTrafficMonitor.cc \
+        src/Airmap/AirMapVehicleManager.cc \
+        src/Airmap/AirMapWeatherInfoManager.cc \
+
+    #-- Do we have an API key?
+    exists(src/Airmap/Airmap_api_key.h) {
+        message("Using compile time Airmap API key")
+        HEADERS += \
+            src/Airmap/Airmap_api_key.h
+        DEFINES += QGC_AIRMAP_KEY_AVAILABLE
+    }
+
+    include(src/Airmap/QJsonWebToken/src/qjsonwebtoken.pri)
+
+} else {
+    #-- Dummies
+    INCLUDEPATH += \
+        src/Airmap/dummy
+    RESOURCES += \
+        src/Airmap/dummy/airmap_dummy.qrc
+    HEADERS += \
+        src/Airmap/dummy/AirspaceManager.h
+    SOURCES += \
+        src/Airmap/dummy/AirspaceManager.cc
 }
 
 #-------------------------------------------------------------------------------------
@@ -1442,22 +1436,3 @@ contains (CONFIG, QGC_DISABLE_INSTALLER_SETUP) {
 
 DISTFILES += \
     src/QmlControls/QGroundControl/Specific/qmldir
-
-#
-# Steps for "install" target on Linux
-#
-LinuxBuild {
-    target.path = $${PREFIX}/bin/
-
-    share_qgroundcontrol.path = $${PREFIX}/share/qgroundcontrol/
-    share_qgroundcontrol.files = $${IN_PWD}/resources/
-
-    share_icons.path = $${PREFIX}/share/icons/hicolor/128x128/apps/
-    share_icons.files = $${IN_PWD}/resources/icons/qgroundcontrol.png
-    share_metainfo.path = $${PREFIX}/share/metainfo/
-    share_metainfo.files = $${IN_PWD}/deploy/org.mavlink.qgroundcontrol.metainfo.xml
-    share_applications.path = $${PREFIX}/share/applications/
-    share_applications.files = $${IN_PWD}/deploy/qgroundcontrol.desktop
-
-    INSTALLS += target share_qgroundcontrol share_icons share_metainfo share_applications
-}

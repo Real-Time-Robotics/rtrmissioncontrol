@@ -29,7 +29,10 @@ LinkConfiguration::LinkConfiguration(const QString& name)
     , _autoConnect  (false)
     , _highLatency  (false)
 {
-
+    _name = name;
+    if (_name.isEmpty()) {
+        qWarning() << "Internal error";
+    }
 }
 
 LinkConfiguration::LinkConfiguration(LinkConfiguration* copy)

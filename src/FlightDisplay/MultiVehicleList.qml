@@ -61,12 +61,12 @@ Item {
                 spacing:            _margin
 
                 QGCButton {
-                    text:       qsTr("Pause")
+                    text:       "Pause"
                     onClicked:  _guidedController.confirmAction(_guidedController.actionMVPause)
                 }
 
                 QGCButton {
-                    text:       qsTr("Start Mission")
+                    text:       "Start Mission"
                     onClicked:  _guidedController.confirmAction(_guidedController.actionMVStartMission)
                 }
             }
@@ -89,7 +89,7 @@ Item {
         property real _cacheBuffer:     height * 2
 
         delegate: Rectangle {
-            width:      missionItemEditorListView.width
+            width:      parent.width
             height:     innerColumn.y + innerColumn.height + _margin
             color:      qgcPal.missionItemEditor
             opacity:    _rectOpacity
@@ -148,31 +148,31 @@ Item {
                     spacing: ScreenTools.defaultFontPixelWidth
 
                     QGCButton {
-                        text:       qsTr("Arm")
+                        text:       "Arm"
                         visible:    _vehicle && !_vehicle.armed
                         onClicked:  _vehicle.armed = true
                     }
 
                     QGCButton {
-                        text:       qsTr("Start Mission")
+                        text:       "Start Mission"
                         visible:    _vehicle && _vehicle.armed && _vehicle.flightMode !== _vehicle.missionFlightMode
                         onClicked:  _vehicle.startMission()
                     }
 
                     QGCButton {
-                        text:       qsTr("Pause")
+                        text:       "Pause"
                         visible:    _vehicle && _vehicle.armed && _vehicle.pauseVehicleSupported
                         onClicked:  _vehicle.pauseVehicle()
                     }
 
                     QGCButton {
-                        text:       qsTr("RTL")
+                        text:       "RTL"
                         visible:    _vehicle && _vehicle.armed && _vehicle.flightMode !== _vehicle.rtlFlightMode
                         onClicked:  _vehicle.flightMode = _vehicle.rtlFlightMode
                     }
 
                     QGCButton {
-                        text:       qsTr("Take control")
+                        text:       "Take control"
                         visible:    _vehicle && _vehicle.armed && _vehicle.flightMode !== _vehicle.takeControlFlightMode
                         onClicked:  _vehicle.flightMode = _vehicle.takeControlFlightMode
                     }

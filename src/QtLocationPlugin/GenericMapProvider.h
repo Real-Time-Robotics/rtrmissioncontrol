@@ -60,41 +60,11 @@ class JapanReliefMapProvider : public MapProvider {
     QString _getURL(const int x, const int y, const int zoom, QNetworkAccessManager* networkManager) override;
 };
 
-class LINZBasemapMapProvider : public MapProvider {
-    Q_OBJECT
-  public:
-    LINZBasemapMapProvider(QObject* parent = nullptr)
-        : MapProvider(QStringLiteral("https://basemaps.linz.govt.nz/v1/tiles/aerial"), QStringLiteral("png"),
-                      AVERAGE_TILE_SIZE, QGeoMapType::SatelliteMapDay, parent) {}
-
-    QString _getURL(const int x, const int y, const int zoom, QNetworkAccessManager* networkManager) override;
-};
-
-class CustomURLMapProvider : public MapProvider {
-    Q_OBJECT
-  public:
-    CustomURLMapProvider(QObject* parent = nullptr)
-        : MapProvider(QStringLiteral(""), QStringLiteral(""),
-                      AVERAGE_TILE_SIZE, QGeoMapType::CustomMap, parent) {}
-
-    QString _getURL(const int x, const int y, const int zoom, QNetworkAccessManager* networkManager) override;
-};
-
 class StatkartMapProvider : public MapProvider {
     Q_OBJECT
   public:
     StatkartMapProvider(QObject* parent = nullptr)
-        : MapProvider(QStringLiteral("https://norgeskart.no/"), QStringLiteral("png"),
-                      AVERAGE_TILE_SIZE, QGeoMapType::StreetMap, parent) {}
-
-    QString _getURL(const int x, const int y, const int zoom, QNetworkAccessManager* networkManager) override;
-};
-
-class StatkartBaseMapProvider : public MapProvider {
-    Q_OBJECT
-  public:
-    StatkartBaseMapProvider(QObject* parent = nullptr)
-        : MapProvider(QStringLiteral("https://norgeskart.no/"), QStringLiteral("png"),
+        : MapProvider(QStringLiteral("https://www.norgeskart.no/"), QStringLiteral("png"),
                       AVERAGE_TILE_SIZE, QGeoMapType::StreetMap, parent) {}
 
     QString _getURL(const int x, const int y, const int zoom, QNetworkAccessManager* networkManager) override;
@@ -147,7 +117,7 @@ class VWorldSatMapProvider : public MapProvider {
     Q_OBJECT
   public:
     VWorldSatMapProvider(QObject* parent = nullptr)
-        : MapProvider(QStringLiteral("www.vworld.kr"), QStringLiteral("jpeg"),
+        : MapProvider(QStringLiteral("www.vworld.kr"), QStringLiteral("jpg"),
                       AVERAGE_TILE_SIZE, QGeoMapType::SatelliteMapDay, parent) {}
 
     QString _getURL(const int x, const int y, const int zoom, QNetworkAccessManager* networkManager) override;

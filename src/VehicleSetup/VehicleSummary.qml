@@ -146,8 +146,6 @@ Rectangle {
                                 anchors.fill:       parent
                                 anchors.margins:    ScreenTools.defaultFontPixelWidth
                                 source:             modelData.summaryQmlSource
-
-                                property var vehicleComponent: modelData
                             }
                         }
                     }

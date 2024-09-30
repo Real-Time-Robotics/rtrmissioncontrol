@@ -57,8 +57,11 @@ SetupPage {
                 id: controller
                 onOldFirmware:          mainWindow.showMessageDialog(qsTr("ESC Calibration"),           qsTr("%1 cannot perform ESC Calibration with this version of firmware. You will need to upgrade to a newer firmware.").arg(QGroundControl.appName))
                 onNewerFirmware:        mainWindow.showMessageDialog(qsTr("ESC Calibration"),           qsTr("%1 cannot perform ESC Calibration with this version of firmware. You will need to upgrade %1.").arg(QGroundControl.appName))
+                onBatteryConnected:     mainWindow.showMessageDialog(qsTr("ESC Calibration"),           qsTr("Performing calibration. This will take a few seconds.."))
+                onCalibrationFailed:    mainWindow.showMessageDialog(qsTr("ESC Calibration failed"),    errorMessage)
+                onCalibrationSuccess:   mainWindow.showMessageDialog(qsTr("ESC Calibration"),           qsTr("Calibration complete. You can disconnect your battery now if you like."))
+                onConnectBattery:       mainWindow.showMessageDialog(qsTr("ESC Calibration"),           _highlightPrefix + qsTr("WARNING: Props must be removed from vehicle prior to performing ESC calibration.") + _highlightSuffix + qsTr(" Connect the battery now and calibration will begin."))
                 onDisconnectBattery:    mainWindow.showMessageDialog(qsTr("ESC Calibration failed"),    qsTr("You must disconnect the battery prior to performing ESC Calibration. Disconnect your battery and try again."))
-                onConnectBattery:       escCalibrationDlgComponent.createObject(mainWindow).open()
             }
 
             ColumnLayout {
@@ -327,7 +330,7 @@ SetupPage {
                             QGCButton {
                                 text:       qsTr("Calculate")
                                 visible:    battVoltageDividerAvailable
-                                onClicked:  calcVoltageDividerDlgComponent.createObject(mainWindow, { batteryIndex: _batteryIndex }).open()
+                                onClicked:  mainWindow.showPopupDialogFromComponent(calcVoltageDividerDlgComponent, { batteryIndex: _batteryIndex })
                             }
                             Item { width: 1; height: 1; Layout.columnSpan: 2; visible: battVoltageDividerAvailable }
 
@@ -351,7 +354,7 @@ SetupPage {
                             QGCButton {
                                 text:       qsTr("Calculate")
                                 visible:    battAmpsPerVoltAvailable
-                                onClicked:  calcAmpsPerVoltDlgComponent.createObject(mainWindow, { batteryIndex: _batteryIndex }).open()
+                                onClicked:  mainWindow.showPopupDialogFromComponent(calcAmpsPerVoltDlgComponent, { batteryIndex: _batteryIndex })
                             }
                             Item { width: 1; height: 1; Layout.columnSpan: 2; visible: battAmpsPerVoltAvailable }
 
@@ -412,17 +415,16 @@ SetupPage {
                 id: calcVoltageDividerDlgComponent
 
                 QGCPopupDialog {
-                    title:      qsTr("Calculate Voltage Divider")
-                    buttons:    StandardButton.Close
-
-                    property alias batteryIndex: batParams.batteryIndex
+                    title:   qsTr("Calculate Voltage Divider")
+                    buttons: StandardButton.Close
 
                     property var        _controller:        controller
-                    property FactGroup  _batteryFactGroup:  controller.vehicle.getFactGroup("battery" + (batteryIndex - 1))
+                    property FactGroup  _batteryFactGroup:  controller.vehicle.getFactGroup("battery" + (dialogProperties.batteryIndex - 1))
 
                     BatteryParams {
                         id:             batParams
                         controller:     _controller
+                        batteryIndex:   dialogProperties.batteryIndex
                     }
 
                     ColumnLayout {
@@ -439,7 +441,7 @@ SetupPage {
                             columns:    2
 
                             QGCLabel { text: qsTr("Measured voltage:") }
-                            QGCTextField { id: measuredVoltage; numericValuesOnly: true }
+                            QGCTextField { id: measuredVoltage }
 
                             QGCLabel { text: qsTr("Vehicle voltage:") }
                             QGCLabel { text: _batteryFactGroup.voltage.valueString }
@@ -462,25 +464,24 @@ SetupPage {
                                 }
                             }
                         }
-                    }
-                }
-            }
+                    } // Column
+                } // QGCViewDialog
+            } // Component - calcVoltageDividerDlgComponent
 
             Component {
                 id: calcAmpsPerVoltDlgComponent
 
                 QGCPopupDialog {
-                    title:      qsTr("Calculate Amps per Volt")
-                    buttons:    StandardButton.Close
-
-                    property alias batteryIndex: batParams.batteryIndex
+                    title:   qsTr("Calculate Amps per Volt")
+                    buttons: StandardButton.Close
 
                     property var        _controller:        controller
-                    property FactGroup  _batteryFactGroup:  controller.vehicle.getFactGroup("battery" + (batteryIndex - 1))
+                    property FactGroup  _batteryFactGroup:  controller.vehicle.getFactGroup("battery" + (dialogProperties.batteryIndex - 1))
 
                     BatteryParams {
                         id:             batParams
                         controller:     _controller
+                        batteryIndex:   dialogProperties.batteryIndex
                     }
 
                     ColumnLayout {
@@ -497,7 +498,7 @@ SetupPage {
                             columns:    2
 
                             QGCLabel { text: qsTr("Measured current:") }
-                            QGCTextField { id: measuredCurrent; numericValuesOnly: true }
+                            QGCTextField { id: measuredCurrent }
 
                             QGCLabel { text: qsTr("Vehicle current:") }
                             QGCLabel { text: _batteryFactGroup.current.valueString }
@@ -519,35 +520,6 @@ SetupPage {
                                     batParams.battAmpsPerVolt.value = newAmpsPerVolt
                                 }
                             }
-                        }
-                    }
-                }
-            }
-
-            Component {
-                id: escCalibrationDlgComponent
-
-                QGCPopupDialog {
-                    id:                     escCalibrationDlg
-                    title:                  qsTr("ESC Calibration")
-                    buttons:                StandardButton.Ok
-                    acceptButtonEnabled:    false
-
-                    Connections {
-                        target: controller
-
-                        onBatteryConnected:     textLabel.text = qsTr("Performing calibration. This will take a few seconds..")
-                        onCalibrationFailed:    { escCalibrationDlg.acceptButtonEnabled = true; textLabel.text = _highlightPrefix + qsTr("ESC Calibration failed. ") + _highlightSuffix + errorMessage }
-                        onCalibrationSuccess:   { escCalibrationDlg.acceptButtonEnabled = true; textLabel.text = qsTr("Calibration complete. You can disconnect your battery now if you like.") }
-                    }
-
-                    ColumnLayout {
-                        QGCLabel {
-                            id:                     textLabel
-                            wrapMode:               Text.WordWrap
-                            text:                   _highlightPrefix + qsTr("WARNING: Props must be removed from vehicle prior to performing ESC calibration.") + _highlightSuffix + qsTr(" Connect the battery now and calibration will begin.")
-                            Layout.fillWidth:       true
-                            Layout.maximumWidth:    mainWindow.width / 2
                         }
                     }
                 }

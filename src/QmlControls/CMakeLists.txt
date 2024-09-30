@@ -1,3 +1,4 @@
+
 add_library(QmlControls
 	AppMessages.cc
 	AppMessages.h
@@ -36,9 +37,6 @@ add_library(QmlControls
 	ToolStripAction.h
 	ToolStripActionList.cc
 	ToolStripActionList.h
-	CustomAction.h
-	CustomActionManager.h
-	CustomActionManager.cc
 )
 
 add_custom_target(QmlControlsQml
@@ -53,7 +51,6 @@ add_custom_target(QmlControlsQml
 		EditPositionDialog.qml
 		ExclusiveGroupItem.qml
 		FactSliderPanel.qml
-		AutotuneUI.qml
 		FileButton.qml
 		FlightModeDropdown.qml
 		FlightModeMenu.qml
@@ -132,9 +129,8 @@ add_custom_target(QmlControlsQml
 		VehicleRotationCal.qml
 		VehicleSummaryRow.qml
 )
-
 target_link_libraries(QmlControls
-	PUBLIC
+        PUBLIC
 		qgc
 
 		FactSystem
@@ -147,3 +143,4 @@ target_link_libraries(QmlControls
 )
 
 target_include_directories(QmlControls INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+

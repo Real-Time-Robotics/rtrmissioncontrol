@@ -32,9 +32,6 @@ QGC_LOGGING_CATEGORY(QGCMapUrlEngineLog, "QGCMapUrlEngineLog")
 #include <QString>
 #include <QTimer>
 
-const char* UrlFactory::kCopernicusElevationProviderKey = "Copernicus Elevation";
-const char* UrlFactory::kCopernicusElevationProviderNotice = "© Airbus Defence and Space GmbH";
-
 //-----------------------------------------------------------------------------
 UrlFactory::UrlFactory() : _timeout(5 * 1000) {
 
@@ -45,7 +42,7 @@ UrlFactory::UrlFactory() : _timeout(5 * 1000) {
     _providersTable["Google Satellite"]  = new GoogleSatelliteMapProvider(this);
     _providersTable["Google Terrain"]    = new GoogleTerrainMapProvider(this);
     _providersTable["Google Hybrid"]    = new GoogleHybridMapProvider(this);
-    _providersTable["Google Labels"]     = new GoogleLabelsMapProvider(this);
+    _providersTable["Google Labels"]     = new GoogleTerrainMapProvider(this);
 #endif
 
     _providersTable["Bing Road"]      = new BingRoadMapProvider(this);
@@ -53,7 +50,6 @@ UrlFactory::UrlFactory() : _timeout(5 * 1000) {
     _providersTable["Bing Hybrid"]    = new BingHybridMapProvider(this);
 
     _providersTable["Statkart Topo"] = new StatkartMapProvider(this);
-    _providersTable["Statkart Basemap"] = new StatkartBaseMapProvider(this);
 
     _providersTable["Eniro Topo"] = new EniroMapProvider(this);
 
@@ -74,21 +70,17 @@ UrlFactory::UrlFactory() : _timeout(5 * 1000) {
 
     //_providersTable["MapQuest Map"] = new MapQuestMapMapProvider(this);
     //_providersTable["MapQuest Sat"] = new MapQuestSatMapProvider(this);
-
+    
     _providersTable["VWorld Street Map"] = new VWorldStreetMapProvider(this);
     _providersTable["VWorld Satellite Map"] = new VWorldSatMapProvider(this);
 
-    _providersTable[kCopernicusElevationProviderKey] = new CopernicusElevationProvider(this);
+    _providersTable["Airmap Elevation"] = new AirmapElevationProvider(this);
 
     _providersTable["Japan-GSI Contour"] = new JapanStdMapProvider(this);
     _providersTable["Japan-GSI Seamless"] = new JapanSeamlessMapProvider(this);
     _providersTable["Japan-GSI Anaglyph"] = new JapanAnaglyphMapProvider(this);
     _providersTable["Japan-GSI Slope"] = new JapanSlopeMapProvider(this);
     _providersTable["Japan-GSI Relief"] = new JapanReliefMapProvider(this);
-
-    _providersTable["LINZ Basemap"] = new LINZBasemapMapProvider(this);
-
-    _providersTable["CustomURL Custom"] = new CustomURLMapProvider(this);
 }
 
 void UrlFactory::registerProvider(QString name, MapProvider* provider) {
@@ -109,7 +101,7 @@ QString UrlFactory::getImageFormat(int id, const QByteArray& image) {
 }
 
 //-----------------------------------------------------------------------------
-QString UrlFactory::getImageFormat(const QString& type, const QByteArray& image) {
+QString UrlFactory::getImageFormat(QString type, const QByteArray& image) {
     if (_providersTable.find(type) != _providersTable.end()) {
         return _providersTable[type]->getImageFormat(image);
     } else {
@@ -130,7 +122,7 @@ QNetworkRequest UrlFactory::getTileURL(int id, int x, int y, int zoom,
 }
 
 //-----------------------------------------------------------------------------
-QNetworkRequest UrlFactory::getTileURL(const QString& type, int x, int y, int zoom,
+QNetworkRequest UrlFactory::getTileURL(QString type, int x, int y, int zoom,
                                        QNetworkAccessManager* networkManager) {
     if (_providersTable.find(type) != _providersTable.end()) {
         return _providersTable[type]->getTileURL(x, y, zoom, networkManager);
@@ -140,10 +132,10 @@ QNetworkRequest UrlFactory::getTileURL(const QString& type, int x, int y, int zo
 }
 
 //-----------------------------------------------------------------------------
-quint32 UrlFactory::averageSizeForType(const QString& type) {
+quint32 UrlFactory::averageSizeForType(QString type) {
     if (_providersTable.find(type) != _providersTable.end()) {
         return _providersTable[type]->getAverageSize();
-    }
+    } 
     qCDebug(QGCMapUrlEngineLog) << "UrlFactory::averageSizeForType " << type
         << " Not registered";
 
@@ -156,9 +148,13 @@ quint32 UrlFactory::averageSizeForType(const QString& type) {
 }
 
 QString UrlFactory::getTypeFromId(int id) {
-    for (auto it = _providersTable.constBegin(); it != _providersTable.constEnd(); ++it) {
-        if ((int)(qHash(it.key()) >> 1) == id) {
-            return it.key();
+
+    QHashIterator<QString, MapProvider*> i(_providersTable);
+
+    while (i.hasNext()) {
+        i.next();
+        if ((int)(qHash(i.key())>>1) == id) {
+            return i.key();
         }
     }
     qCDebug(QGCMapUrlEngineLog) << "getTypeFromId : id not found" << id;
@@ -176,26 +172,21 @@ MapProvider* UrlFactory::getMapProviderFromId(int id)
     return nullptr;
 }
 
-//-----------------------------------------------------------------------------
 // Todo : qHash produce a uint bigger than max(int)
 // There is still a low probability for this to
 // generate similar hash for different types
-int
-UrlFactory::getIdFromType(const QString& type)
-{
-    return (int)(qHash(type)>>1);
-}
+int UrlFactory::getIdFromType(QString type) { return (int)(qHash(type)>>1); }
 
 //-----------------------------------------------------------------------------
 int
-UrlFactory::long2tileX(const QString& mapType, double lon, int z)
+UrlFactory::long2tileX(QString mapType, double lon, int z)
 {
     return _providersTable[mapType]->long2tileX(lon, z);
 }
 
 //-----------------------------------------------------------------------------
 int
-UrlFactory::lat2tileY(const QString& mapType, double lat, int z)
+UrlFactory::lat2tileY(QString mapType, double lat, int z)
 {
     return _providersTable[mapType]->lat2tileY(lat, z);
 }
@@ -203,7 +194,7 @@ UrlFactory::lat2tileY(const QString& mapType, double lat, int z)
 
 //-----------------------------------------------------------------------------
 QGCTileSet
-UrlFactory::getTileCount(int zoom, double topleftLon, double topleftLat, double bottomRightLon, double bottomRightLat, const QString& mapType)
+UrlFactory::getTileCount(int zoom, double topleftLon, double topleftLat, double bottomRightLon, double bottomRightLat, QString mapType)
 {
 	return _providersTable[mapType]->getTileCount(zoom, topleftLon, topleftLat, bottomRightLon, bottomRightLat);
 }

@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "scope": "Firmware",
   "parameters": [
     {
       "name": "ctl_bw",

@@ -19,7 +19,6 @@ Rectangle {
     color:              Qt.rgba(0,0,0,0.75)
     clip:               true
     anchors.centerIn:   parent
-    visible:        QGroundControl.videoManager.isUvc
 
     function adjustAspectRatio()
     {
@@ -33,7 +32,7 @@ Rectangle {
 
     Camera {
         id:             camera
-        deviceId:       QGroundControl.videoManager.uvcVideoSourceID
+        deviceId:       QGroundControl.videoManager.videoSourceID
         captureMode:    Camera.CaptureViewfinder
         onDeviceIdChanged: {
             adjustAspectRatio()
@@ -48,15 +47,12 @@ Rectangle {
         source:         camera
         anchors.fill:   parent
         fillMode:       VideoOutput.PreserveAspectCrop
-        visible:        QGroundControl.videoManager.isUvc
-
-        onVisibleChanged: {
-            console.log('UVC Video output visible: ', visible);
-            if (visible) {
-                camera.start()
-            } else {
-                camera.stop()
-            }
-        }
+        visible:        !QGroundControl.videoManager.isGStreamer
+    }
+    onVisibleChanged: {
+        if(visible)
+            camera.start()
+        else
+            camera.stop()
     }
 }

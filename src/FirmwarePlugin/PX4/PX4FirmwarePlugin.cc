@@ -11,6 +11,7 @@
 #include "PX4ParameterMetaData.h"
 #include "QGCApplication.h"
 #include "PX4AutoPilotPlugin.h"
+#include "PX4AdvancedFlightModesController.h"
 #include "PX4SimpleFlightModesController.h"
 #include "AirframeComponentController.h"
 #include "SensorsComponentController.h"
@@ -52,10 +53,12 @@ PX4FirmwarePlugin::PX4FirmwarePlugin()
     , _simpleFlightMode     (tr("Simple"))
     , _orbitFlightMode      (tr("Orbit"))
 {
+    qmlRegisterType<PX4AdvancedFlightModesController>   ("QGroundControl.Controllers", 1, 0, "PX4AdvancedFlightModesController");
     qmlRegisterType<PX4SimpleFlightModesController>     ("QGroundControl.Controllers", 1, 0, "PX4SimpleFlightModesController");
     qmlRegisterType<AirframeComponentController>        ("QGroundControl.Controllers", 1, 0, "AirframeComponentController");
     qmlRegisterType<SensorsComponentController>         ("QGroundControl.Controllers", 1, 0, "SensorsComponentController");
     qmlRegisterType<PowerComponentController>           ("QGroundControl.Controllers", 1, 0, "PowerComponentController");
+    qmlRegisterType<RadioComponentController>           ("QGroundControl.Controllers", 1, 0, "RadioComponentController");
 
     struct Modes2Name {
         uint8_t     main_mode;
@@ -81,7 +84,7 @@ PX4FirmwarePlugin::PX4FirmwarePlugin()
         { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_RTL,           true,   true,   true },
         { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_FOLLOW_TARGET, true,   false,  true },
         { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_LAND,          false,  true,   true },
-        { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_PRECLAND,      true,  false,  true },
+        { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_PRECLAND,      false,  false,  true },
         { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_READY,         false,  true,   true },
         { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_RTGS,          false,  true,   true },
         { PX4_CUSTOM_MAIN_MODE_AUTO,        PX4_CUSTOM_SUB_MODE_AUTO_TAKEOFF,       false,  true,   true },
@@ -271,9 +274,7 @@ QList<MAV_CMD> PX4FirmwarePlugin::supportedMissionCommands(QGCMAVLink::VehicleCl
         MAV_CMD_DO_DIGICAM_CONTROL,
         MAV_CMD_DO_SET_CAM_TRIGG_DIST,
         MAV_CMD_DO_SET_SERVO,
-        MAV_CMD_DO_SET_ACTUATOR,
         MAV_CMD_DO_CHANGE_SPEED,
-        MAV_CMD_DO_SET_HOME,
         MAV_CMD_DO_LAND_START,
         MAV_CMD_DO_SET_ROI_LOCATION, MAV_CMD_DO_SET_ROI_WPNEXT_OFFSET, MAV_CMD_DO_SET_ROI_NONE,
         MAV_CMD_DO_MOUNT_CONFIGURE,
@@ -283,7 +284,6 @@ QList<MAV_CMD> PX4FirmwarePlugin::supportedMissionCommands(QGCMAVLink::VehicleCl
         MAV_CMD_NAV_DELAY,
         MAV_CMD_CONDITION_YAW,
         MAV_CMD_NAV_LOITER_TO_ALT,
-        MAV_CMD_DO_GRIPPER
     };
 
     QList<MAV_CMD> vtolCommands = {
@@ -390,6 +390,17 @@ void PX4FirmwarePlugin::_mavCommandResult(int vehicleId, int component, int comm
     }
 }
 
+double PX4FirmwarePlugin::minimumTakeoffAltitude(Vehicle* vehicle)
+{
+    QString takeoffAltParam("MIS_TAKEOFF_ALT");
+
+    if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, takeoffAltParam)) {
+        return vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, takeoffAltParam)->rawValue().toDouble();
+    } else {
+        return FirmwarePlugin::minimumTakeoffAltitude(vehicle);
+    }
+}
+
 void PX4FirmwarePlugin::guidedModeTakeoff(Vehicle* vehicle, double takeoffAltRel)
 {
     double vehicleAltitudeAMSL = vehicle->altitudeAMSL()->rawValue().toDouble();
@@ -398,7 +409,10 @@ void PX4FirmwarePlugin::guidedModeTakeoff(Vehicle* vehicle, double takeoffAltRel
         return;
     }
 
-    double takeoffAltAMSL = takeoffAltRel + vehicleAltitudeAMSL;
+    double takeoffAltRelFromVehicle = minimumTakeoffAltitude(vehicle);
+    double takeoffAltAMSL = qMax(takeoffAltRel, takeoffAltRelFromVehicle) + vehicleAltitudeAMSL;
+
+    qDebug() << takeoffAltRel << takeoffAltRelFromVehicle << takeoffAltAMSL << vehicleAltitudeAMSL;
 
     connect(vehicle, &Vehicle::mavCommandResult, this, &PX4FirmwarePlugin::_mavCommandResult);
     vehicle->sendMavCommand(
@@ -409,50 +423,6 @@ void PX4FirmwarePlugin::guidedModeTakeoff(Vehicle* vehicle, double takeoffAltRel
         0, 0,                                   // param 2-4 unused
         NAN, NAN, NAN,                          // No yaw, lat, lon
         static_cast<float>(takeoffAltAMSL));    // AMSL altitude
-}
-
-double PX4FirmwarePlugin::maximumHorizontalSpeedMultirotor(Vehicle* vehicle)
-{
-    QString speedParam("MPC_XY_VEL_MAX");
-
-    if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, speedParam)) {
-        return vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, speedParam)->rawValue().toDouble();
-    }
-
-    return FirmwarePlugin::maximumHorizontalSpeedMultirotor(vehicle);
-}
-
-double PX4FirmwarePlugin::maximumEquivalentAirspeed(Vehicle* vehicle)
-{
-    QString airspeedMax("FW_AIRSPD_MAX");
-
-    if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, airspeedMax)) {
-        return vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, airspeedMax)->rawValue().toDouble();
-    }
-
-    return FirmwarePlugin::maximumEquivalentAirspeed(vehicle);
-}
-
-double PX4FirmwarePlugin::minimumEquivalentAirspeed(Vehicle* vehicle)
-{
-    QString airspeedMin("FW_AIRSPD_MIN");
-
-    if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, airspeedMin)) {
-        return vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, airspeedMin)->rawValue().toDouble();
-    }
-
-    return FirmwarePlugin::minimumEquivalentAirspeed(vehicle);
-}
-
-bool PX4FirmwarePlugin::mulirotorSpeedLimitsAvailable(Vehicle* vehicle)
-{
-    return vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, "MPC_XY_VEL_MAX");
-}
-
-bool PX4FirmwarePlugin::fixedWingAirSpeedLimitsAvailable(Vehicle* vehicle)
-{
-    return vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, "FW_AIRSPD_MIN") &&
-            vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, "FW_AIRSPD_MAX");
 }
 
 void PX4FirmwarePlugin::guidedModeGotoLocation(Vehicle* vehicle, const QGeoCoordinate& gotoCoord)
@@ -494,12 +464,12 @@ typedef struct {
     double              newAMSLAlt;
 } PauseVehicleThenChangeAltData_t;
 
-static void _pauseVehicleThenChangeAltResultHandler(void* resultHandlerData, int /*compId*/, const mavlink_command_ack_t& ack, Vehicle::MavCmdResultFailureCode_t failureCode)
+static void _pauseVehicleThenChangeAltResultHandler(void* resultHandlerData, int /*compId*/, MAV_RESULT commandResult, Vehicle::MavCmdResultFailureCode_t failureCode)
 {
-    if (ack.result != MAV_RESULT_ACCEPTED) {
+    if (commandResult != MAV_RESULT_ACCEPTED) {
         switch (failureCode) {
         case Vehicle::MavCmdResultCommandResultOnly:
-            qDebug() << QStringLiteral("MAV_CMD_DO_REPOSITION error(%1)").arg(ack.result);
+            qDebug() << QStringLiteral("MAV_CMD_DO_REPOSITION error(%1)").arg(commandResult);
             break;
         case Vehicle::MavCmdResultFailureNoResponseToCommand:
             qDebug() << "MAV_CMD_DO_REPOSITION no response from vehicle";
@@ -511,7 +481,7 @@ static void _pauseVehicleThenChangeAltResultHandler(void* resultHandlerData, int
     }
 
     PauseVehicleThenChangeAltData_t* pData = static_cast<PauseVehicleThenChangeAltData_t*>(resultHandlerData);
-    pData->plugin->_changeAltAfterPause(resultHandlerData, ack.result == MAV_RESULT_ACCEPTED /* pauseSucceeded */);
+    pData->plugin->_changeAltAfterPause(resultHandlerData, commandResult == MAV_RESULT_ACCEPTED /* pauseSucceeded */);
 }
 
 void PX4FirmwarePlugin::_changeAltAfterPause(void* resultHandlerData, bool pauseSucceeded)
@@ -555,12 +525,9 @@ void PX4FirmwarePlugin::guidedModeChangeAltitude(Vehicle* vehicle, double altitu
     resultData->newAMSLAlt  = vehicle->homePosition().altitude() + newAltRel;
 
     if (pauseVehicle) {
-        Vehicle::MavCmdAckHandlerInfo_t handlerInfo = {};
-        handlerInfo.resultHandler       = _pauseVehicleThenChangeAltResultHandler;
-        handlerInfo.resultHandlerData   = resultData;
-
         vehicle->sendMavCommandWithHandler(
-                    &handlerInfo,
+                    _pauseVehicleThenChangeAltResultHandler,
+                    resultData,
                     vehicle->defaultComponentId(),
                     MAV_CMD_DO_REPOSITION,
                     -1.0f,                                  // Don't change groundspeed
@@ -570,34 +537,6 @@ void PX4FirmwarePlugin::guidedModeChangeAltitude(Vehicle* vehicle, double altitu
     } else {
         _changeAltAfterPause(resultData, true /* pauseSucceeded */);
     }
-}
-
-void PX4FirmwarePlugin::guidedModeChangeGroundSpeedMetersSecond(Vehicle* vehicle, double groundspeed)
-{
-
-    vehicle->sendMavCommand(
-        vehicle->defaultComponentId(),
-        MAV_CMD_DO_CHANGE_SPEED,
-        true,                                   // show error is fails
-        1,                                     // 0: airspeed, 1: groundspeed
-        static_cast<float>(groundspeed),       // groundspeed setpoint
-        -1,                                   // throttle
-        0,                                    // 0: absolute speed, 1: relative to current
-        NAN, NAN,NAN);                        // param 5-7 unused
-}
-
-void PX4FirmwarePlugin::guidedModeChangeEquivalentAirspeedMetersSecond(Vehicle* vehicle, double airspeed_equiv)
-{
-
-    vehicle->sendMavCommand(
-        vehicle->defaultComponentId(),
-        MAV_CMD_DO_CHANGE_SPEED,
-        true,                                   // show error is fails
-        0,                                     // 0: airspeed, 1: groundspeed
-        static_cast<float>(airspeed_equiv),       // groundspeed setpoint
-        -1,                                   // throttle
-        0,                                    // 0: absolute speed, 1: relative to current
-        NAN, NAN,NAN);                        // param 5-7 unused
 }
 
 void PX4FirmwarePlugin::startMission(Vehicle* vehicle)
@@ -705,36 +644,5 @@ QString PX4FirmwarePlugin::_versionRegex() {
 
 bool PX4FirmwarePlugin::supportsNegativeThrust(Vehicle* vehicle)
 {
-    return ((vehicle->vehicleType() == MAV_TYPE_GROUND_ROVER) || (vehicle->vehicleType() == MAV_TYPE_SUBMARINE));
-}
-
-QString PX4FirmwarePlugin::getHobbsMeter(Vehicle* vehicle)
-{
-    static const char* HOOBS_HI = "LND_FLIGHT_T_HI";
-    static const char* HOOBS_LO = "LND_FLIGHT_T_LO";
-    uint64_t hobbsTimeSeconds = 0;
-
-    if (vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, HOOBS_HI) &&
-            vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, HOOBS_LO)) {
-        Fact* factHi = vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, HOOBS_HI);
-        Fact* factLo = vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, HOOBS_LO);
-        hobbsTimeSeconds = ((uint64_t)factHi->rawValue().toUInt() << 32 | (uint64_t)factLo->rawValue().toUInt()) / 1000000;
-        qCDebug(VehicleLog) << "Hobbs Meter raw PX4:" << "(" << factHi->rawValue().toUInt() << factLo->rawValue().toUInt() << ")";
-    }
-
-    int hours   = hobbsTimeSeconds / 3600;
-    int minutes = (hobbsTimeSeconds % 3600) / 60;
-    int seconds = hobbsTimeSeconds % 60;
-    QString timeStr = QString::asprintf("%04d:%02d:%02d", hours, minutes, seconds);
-    qCDebug(VehicleLog) << "Hobbs Meter string:" << timeStr;
-    return timeStr;
-}
-
-bool PX4FirmwarePlugin::hasGripper(const Vehicle* vehicle) const
-{
-    if(vehicle->parameterManager()->parameterExists(FactSystem::defaultComponentId, QStringLiteral("PD_GRIPPER_EN"))) {
-        bool _hasGripper = (vehicle->parameterManager()->getParameter(FactSystem::defaultComponentId, QStringLiteral("PD_GRIPPER_EN"))->rawValue().toInt()) != 0 ? true : false;
-        return _hasGripper;
-    }
-    return false;
+    return vehicle->vehicleType() == MAV_TYPE_GROUND_ROVER;
 }

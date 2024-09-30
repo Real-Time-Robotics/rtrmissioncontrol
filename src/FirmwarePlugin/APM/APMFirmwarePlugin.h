@@ -7,7 +7,12 @@
  *
  ****************************************************************************/
 
-#pragma once
+
+/// @file
+///     @author Don Gagne <don@thegagnes.com>
+
+#ifndef APMFirmwarePlugin_H
+#define APMFirmwarePlugin_H
 
 #include "FirmwarePlugin.h"
 #include "QGCLoggingCategory.h"
@@ -56,7 +61,6 @@ public:
     QStringList         flightModes                     (Vehicle* vehicle) override;
     QString             flightMode                      (uint8_t base_mode, uint32_t custom_mode) const override;
     bool                setFlightMode                   (const QString& flightMode, uint8_t* base_mode, uint32_t* custom_mode) override;
-    bool MAV_CMD_DO_SET_MODE_is_supported() const override { return true; }
     bool                isGuidedMode                    (const Vehicle* vehicle) const override;
     QString             gotoFlightMode                  (void) const override { return QStringLiteral("Guided"); }
     QString             rtlFlightMode                   (void) const override { return QString("RTL"); }
@@ -77,13 +81,6 @@ public:
     QObject*            _loadParameterMetaData          (const QString& metaDataFile) override;
     QString             brandImageIndoor                (const Vehicle* vehicle) const override { Q_UNUSED(vehicle); return QStringLiteral("/qmlimages/APM/BrandImage"); }
     QString             brandImageOutdoor               (const Vehicle* vehicle) const override { Q_UNUSED(vehicle); return QStringLiteral("/qmlimages/APM/BrandImage"); }
-    QString             getHobbsMeter                   (Vehicle* vehicle) override; 
-    bool                hasGripper                      (const Vehicle* vehicle) const override;
-    const QVariantList& toolIndicators                  (const Vehicle* vehicle) override;
-    double              maximumEquivalentAirspeed       (Vehicle* vehicle) override;
-    double              minimumEquivalentAirspeed       (Vehicle* vehicle) override;
-    bool                fixedWingAirSpeedLimitsAvailable(Vehicle* vehicle) override;
-    void                guidedModeChangeEquivalentAirspeedMetersSecond(Vehicle* vehicle, double airspeed_equiv) override;
 
 protected:
     /// All access to singleton is through stack specific implementation
@@ -106,7 +103,7 @@ private:
     void _handleIncomingHeartbeat(Vehicle* vehicle, mavlink_message_t* message);
     void _handleOutgoingParamSetThreadSafe(Vehicle* vehicle, LinkInterface* outgoingLink, mavlink_message_t* message);
     void _soloVideoHandshake(void);
-    virtual bool _guidedModeTakeoff(Vehicle* vehicle, double altitudeRel);
+    bool _guidedModeTakeoff(Vehicle* vehicle, double altitudeRel);
     void _handleRCChannels(Vehicle* vehicle, mavlink_message_t* message);
     void _handleRCChannelsRaw(Vehicle* vehicle, mavlink_message_t* message);
     QString _getLatestVersionFileUrl(Vehicle* vehicle) override;
@@ -115,7 +112,6 @@ private:
     // Any instance data here must be global to all vehicles
     // Vehicle specific data should go into APMFirmwarePluginInstanceData
 
-    QVariantList            _toolIndicatorList;
     QList<APMCustomMode>    _supportedModes;
     QMap<int /* vehicle id */, QMap<int /* componentId */, bool /* true: component is part of ArduPilot stack */>> _ardupilotComponentMap;
 
@@ -128,20 +124,4 @@ private:
     static QMutex&          _reencodeMavlinkChannelMutex();
 };
 
-class APMFirmwarePluginInstanceData : public QObject
-{
-    Q_OBJECT
-
-public:
-    APMFirmwarePluginInstanceData(QObject* parent = nullptr)
-        : QObject(parent)
-    {
-
-    }
-
-    QTime lastBatteryStatusTime;
-    QTime lastHomePositionTime;
-
-    bool  MAV_CMD_DO_REPOSITION_supported = false;
-    bool  MAV_CMD_DO_REPOSITION_unsupported = false;
-};
+#endif

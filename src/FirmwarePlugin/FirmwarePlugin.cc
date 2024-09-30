@@ -15,8 +15,6 @@
 #include "AppSettings.h"
 #include "QGCFileDownload.h"
 #include "QGCCameraManager.h"
-#include "RadioComponentController.h"
-#include "Autotune.h"
 
 #include <QRegularExpression>
 #include <QDebug>
@@ -48,12 +46,6 @@ FirmwarePluginFactoryRegister* FirmwarePluginFactoryRegister::instance(void)
     }
 
     return _instance;
-}
-
-
-FirmwarePlugin::FirmwarePlugin(void)
-{
-    qmlRegisterType<RadioComponentController>       ("QGroundControl.Controllers",                       1, 0, "RadioComponentController");
 }
 
 AutoPilotPlugin* FirmwarePlugin::autopilotPlugin(Vehicle* vehicle)
@@ -271,21 +263,6 @@ void FirmwarePlugin::guidedModeGotoLocation(Vehicle* vehicle, const QGeoCoordina
 void FirmwarePlugin::guidedModeChangeAltitude(Vehicle*, double, bool pauseVehicle)
 {
     // Not supported by generic vehicle
-    Q_UNUSED(pauseVehicle);
-    qgcApp()->showAppMessage(guided_mode_not_supported_by_vehicle);
-}
-
-void
-FirmwarePlugin::guidedModeChangeGroundSpeedMetersSecond(Vehicle*, double)
-{
-    // Not supported by generic vehicle
-    qgcApp()->showAppMessage(guided_mode_not_supported_by_vehicle);
-}
-
-void
-FirmwarePlugin::guidedModeChangeEquivalentAirspeedMetersSecond(Vehicle*, double)
-{
-    // Not supported by generic vehicle
     qgcApp()->showAppMessage(guided_mode_not_supported_by_vehicle);
 }
 
@@ -332,8 +309,6 @@ const QVariantList& FirmwarePlugin::toolIndicators(const Vehicle*)
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/TelemetryRSSIIndicator.qml")),
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/RCRSSIIndicator.qml")),
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/BatteryIndicator.qml")),
-            QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/RemoteIDIndicator.qml")),
-            QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/GimbalIndicator.qml")),
         });
     }
     return _toolIndicatorList;
@@ -344,6 +319,7 @@ const QVariantList& FirmwarePlugin::modeIndicators(const Vehicle*)
     //-- Default list of indicators for all vehicles.
     if(_modeIndicatorList.size() == 0) {
         _modeIndicatorList = QVariantList({
+            QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/ROIIndicator.qml")),
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/MultiVehicleSelector.qml")),
             QVariant::fromValue(QUrl::fromUserInput("qrc:/toolbar/LinkIndicator.qml")),
         });
@@ -516,7 +492,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     5.4,                // focalLength
                     true,               // landscape
                     false,              // fixedOrientation
-                    0.8,                // minTriggerInterval
+                    0,                  // minTriggerInterval
                     tr("Sentera Double 4K Sensor"),// SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);
         _cameraList.append(QVariant::fromValue(metaData));
@@ -532,41 +508,9 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     4.14,               // focalLength
                     true,               // landscape
                     false,              // fixedOrientation
-                    0.5,                // minTriggerInterval
+                    0,                  // minTriggerInterval
                     tr("Sentera NDVI Single Sensor"),// SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);
-        _cameraList.append(QVariant::fromValue(metaData));
-
-        metaData = new CameraMetaData(
-                    "Sentera 6X Sensor",
-                    tr("Sentera"),
-                    tr("6X Sensor"),
-                    6.57,               // sensorWidth
-                    4.93,               // sendsorHeight
-                    1904,               // imageWidth
-                    1428,               // imageHeight
-                    8.0,                // focalLength
-                    true,               // true: landscape orientation
-                    false,              // true: camera is fixed orientation
-                    0.2,                // minimum trigger interval
-                    tr(""),             // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
-                    this);              // parent
-        _cameraList.append(QVariant::fromValue(metaData));
-
-        metaData = new CameraMetaData(
-                    "Sentera 65R Sensor",
-                    tr("Sentera"),
-                    tr("65R Sensor"),
-                    29.9,                // sensorWidth
-                    22.4,                // sendsorHeight
-                    9344,                // imageWidth
-                    7000,                // imageHeight
-                    27.4,                // focalLength
-                    true,                // landscape
-                    false,               // fixedOrientation
-                    0.3,                 // minTriggerInterval
-                    tr(""),              // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
-                    this);               // parent
         _cameraList.append(QVariant::fromValue(metaData));
 
         metaData = new CameraMetaData(
@@ -582,7 +526,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     16,                     // focalLength
                     true,                   // true: landscape orientation
                     false,                  // true: camera is fixed orientation
-                    1.0,                    // minimum trigger interval
+                    2.0,                    // minimum trigger interval
                     tr("Sony a6000 16mm"),  // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);                  // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -598,7 +542,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     35,                 // focalLength
                     true,               // true: landscape orientation
                     false,              // true: camera is fixed orientation
-                    1.0,                // minimum trigger interval
+                    2.0,                // minimum trigger interval
                     "",
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -614,7 +558,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     21,                 // focalLength
                     true,               // true: landscape orientation
                     false,              // true: camera is fixed orientation
-                    1.0,                // minimum trigger interval
+                    2.0,                // minimum trigger interval
                     tr("Sony a6300 Zeiss 21mm f/2.8"),// SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -630,7 +574,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     28,                                 // focalLength
                     true,                               // true: landscape orientation
                     false,              // true: camera is fixed orientation
-                    1.0,                                // minimum trigger interval
+                    2.0,                                // minimum trigger interval
                     tr("Sony a6300 Sony 28mm f/2.0"),   // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);                              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -646,7 +590,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     21,                                 // focalLength
                     true,                               // true: landscape orientation
                     true,                               // true: camera is fixed orientation
-                    1.0,                                // minimum trigger interval
+                    2.0,                                // minimum trigger interval
                     tr("Sony a7R II Zeiss 21mm f/2.8"), // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);                              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -662,7 +606,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     28,                 // focalLength
                     true,               // true: landscape orientation
                     true,               // true: camera is fixed orientation
-                    1.0,                // minimum trigger interval
+                    2.0,                // minimum trigger interval
                     tr("Sony a7R II Sony 28mm f/2.0"),// SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -678,7 +622,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     35,                 // focalLength
                     true,               // true: landscape orientation
                     false,              // true: camera is fixed orientation
-                    1.0,                // minimum trigger interval
+                    2.0,                // minimum trigger interval
                     "",
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -694,7 +638,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     35,                 // focalLength
                     true,               // true: landscape orientation
                     false,               // true: camera is fixed orientation
-                    1.0,                // minimum trigger interval
+                    2.0,                // minimum trigger interval
                     "",
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -742,7 +686,7 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     35,                 // focalLength
                     true,               // true: landscape orientation
                     false,              // true: camera is fixed orientation
-                    1.0,                // minimum trigger interval
+                    2.0,                // minimum trigger interval
                     "",
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
@@ -881,53 +825,6 @@ const QVariantList& FirmwarePlugin::cameraList(const Vehicle*)
                     this);              // parent
         _cameraList.append(QVariant::fromValue(metaData));
 
-        metaData = new CameraMetaData(
-                    "Flir Duo Pro R",
-                    tr("Flir"),
-                    tr("Duo Pro R"),
-                    10.88,                // sensorWidth
-                    8.704,                // sensorHeight
-                    640,               // imageWidth
-                    512,               // imageHeight
-                    19,                // focalLength
-                    true,               // true: landscape orientation
-                    false,              // true: camera is fixed orientation
-                    1.0,                  // minimum trigger interval
-                    "",   // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
-                    this);              // parent
-        _cameraList.append(QVariant::fromValue(metaData));
-
-        metaData = new CameraMetaData(
-                    "Workswell Wiris Security Thermal Camera",
-                    tr("Workswell"),
-                    tr("Wiris Security"),
-                    13.6,                // sensorWidth
-                    10.2,                // sensorHeight
-                    800,               // imageWidth
-                    600,               // imageHeight
-                    35,                // focalLength
-                    true,               // true: landscape orientation
-                    false,              // true: camera is fixed orientation
-                    1.8,                  // minimum trigger interval
-                    "",   // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
-                    this);              // parent
-        _cameraList.append(QVariant::fromValue(metaData));
-
-        metaData = new CameraMetaData(
-                    "Workswell Wiris Security Visual Camera",
-                    tr("Workswell"),
-                    tr("Wiris Security"),
-                    4.826,                // sensorWidth
-                    3.556,                // sensorHeight
-                    1920,               // imageWidth
-                    1080,               // imageHeight
-                    4.3,                // focalLength
-                    true,               // true: landscape orientation
-                    false,              // true: camera is fixed orientation
-                    1.8,                  // minimum trigger interval
-                    "",   // SHOULD BE BLANK FOR NEWLY ADDED CAMERAS. Deprecated translation from older builds.
-                    this);              // parent
-        _cameraList.append(QVariant::fromValue(metaData));
     }
 
     return _cameraList;
@@ -949,8 +846,8 @@ bool FirmwarePlugin::_armVehicleAndValidate(Vehicle* vehicle)
     // Only try arming the vehicle a single time. Doing retries on arming with a delay can lead to safety issues.
     vehicle->setArmed(true, false /* showError */);
 
-    // Wait 1500 msecs for vehicle to arm (waiting for the next heartbeat)
-    for (int i = 0; i < 15; i++) {
+    // Wait 1000 msecs for vehicle to arm
+    for (int i=0; i<10; i++) {
         if (vehicle->armed()) {
             vehicleArmed = true;
             break;
@@ -1156,9 +1053,4 @@ void FirmwarePlugin::sendGCSMotionReport(Vehicle* vehicle, FollowMe::GCSMotionRe
                                               &follow_target);
         vehicle->sendMessageOnLinkThreadSafe(sharedLink.get(), message);
     }
-}
-
-Autotune* FirmwarePlugin::createAutotune(Vehicle *vehicle)
-{
-    return new Autotune(vehicle);
 }

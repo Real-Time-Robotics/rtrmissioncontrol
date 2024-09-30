@@ -40,11 +40,11 @@ public:
 
     QString uri             () { return QString(_streamInfo.uri);  }
     QString name            () { return QString(_streamInfo.name); }
-    qreal   aspectRatio     () const;
-    qreal   hfov            () const{ return _streamInfo.hfov; }
-    int     type            () const{ return _streamInfo.type; }
-    int     streamID        () const{ return _streamInfo.stream_id; }
-    bool    isThermal       () const{ return _streamInfo.flags & VIDEO_STREAM_STATUS_FLAGS_THERMAL; }
+    qreal   aspectRatio     ();
+    qreal   hfov            () { return _streamInfo.hfov; }
+    int     type            () { return _streamInfo.type; }
+    int     streamID        () { return _streamInfo.stream_id; }
+    bool    isThermal       () { return _streamInfo.flags & VIDEO_STREAM_STATUS_FLAGS_THERMAL; }
 
     bool    update          (const mavlink_video_stream_status_t* vs);
 
@@ -138,21 +138,12 @@ public:
         THERMAL_PIP,
     };
 
-    enum TrackingStatus {
-        TRACKING_UNKNOWN        = 0,
-        TRACKING_SUPPORTED      = 1,
-        TRACKING_ENABLED        = 2,
-        TRACKING_RECTANGLE      = 4,
-        TRACKING_POINT          = 8
-    };
-
     Q_ENUM(CameraMode)
     Q_ENUM(VideoStatus)
     Q_ENUM(PhotoStatus)
     Q_ENUM(PhotoMode)
     Q_ENUM(StorageStatus)
     Q_ENUM(ThermalViewMode)
-    Q_ENUM(TrackingStatus)
 
     Q_PROPERTY(int          version             READ version            NOTIFY infoChanged)
     Q_PROPERTY(QString      modelName           READ modelName          NOTIFY infoChanged)
@@ -167,7 +158,6 @@ public:
     Q_PROPERTY(bool         hasZoom             READ hasZoom            NOTIFY infoChanged)
     Q_PROPERTY(bool         hasFocus            READ hasFocus           NOTIFY infoChanged)
     Q_PROPERTY(bool         hasVideoStream      READ hasVideoStream     NOTIFY infoChanged)
-    Q_PROPERTY(bool         hasTracking         READ hasTracking        NOTIFY infoChanged)
     Q_PROPERTY(bool         photosInVideoMode   READ photosInVideoMode  NOTIFY infoChanged)
     Q_PROPERTY(bool         videoInPhotoMode    READ videoInPhotoMode   NOTIFY infoChanged)
     Q_PROPERTY(bool         isBasic             READ isBasic            NOTIFY infoChanged)
@@ -207,10 +197,6 @@ public:
     Q_PROPERTY(QStringList  streamLabels        READ streamLabels                                   NOTIFY streamLabelsChanged)
     Q_PROPERTY(ThermalViewMode thermalMode      READ thermalMode        WRITE  setThermalMode       NOTIFY thermalModeChanged)
     Q_PROPERTY(double       thermalOpacity      READ thermalOpacity     WRITE  setThermalOpacity    NOTIFY thermalOpacityChanged)
-    Q_PROPERTY(bool         trackingEnabled     READ trackingEnabled    WRITE setTrackingEnabled    NOTIFY trackingEnabledChanged)
-    Q_PROPERTY(TrackingStatus trackingStatus    READ trackingStatus                                 CONSTANT)
-    Q_PROPERTY(bool         trackingImageStatus READ trackingImageStatus                            NOTIFY trackingImageStatusChanged)
-    Q_PROPERTY(QRectF       trackingImageRect   READ trackingImageRect                              NOTIFY trackingImageStatusChanged)
 
     Q_INVOKABLE virtual void setVideoMode   ();
     Q_INVOKABLE virtual void setPhotoMode   ();
@@ -227,9 +213,6 @@ public:
     Q_INVOKABLE virtual void stopZoom       ();
     Q_INVOKABLE virtual void stopStream     ();
     Q_INVOKABLE virtual void resumeStream   ();
-    Q_INVOKABLE virtual void startTracking  (QRectF rec);
-    Q_INVOKABLE virtual void startTracking  (QPointF point, double radius);
-    Q_INVOKABLE virtual void stopTracking   ();
 
     virtual int         version             () { return _version; }
     virtual QString     modelName           () { return _modelName; }
@@ -243,7 +226,6 @@ public:
     virtual bool        hasModes            () { return _info.flags & CAMERA_CAP_FLAGS_HAS_MODES; }
     virtual bool        hasZoom             () { return _info.flags & CAMERA_CAP_FLAGS_HAS_BASIC_ZOOM; }
     virtual bool        hasFocus            () { return _info.flags & CAMERA_CAP_FLAGS_HAS_BASIC_FOCUS; }
-    virtual bool        hasTracking         () { return _trackingStatus & TRACKING_SUPPORTED; }
     virtual bool        hasVideoStream      () { return _info.flags & CAMERA_CAP_FLAGS_HAS_VIDEO_STREAM; }
     virtual bool        photosInVideoMode   () { return _info.flags & CAMERA_CAP_FLAGS_CAN_CAPTURE_IMAGE_IN_VIDEO_MODE; }
     virtual bool        videoInPhotoMode    () { return _info.flags & CAMERA_CAP_FLAGS_CAN_CAPTURE_VIDEO_IN_IMAGE_MODE; }
@@ -305,17 +287,8 @@ public:
     virtual void        handleParamValue    (const mavlink_param_ext_value_t& value);
     virtual void        handleStorageInfo   (const mavlink_storage_information_t& st);
     virtual void        handleBatteryStatus (const mavlink_battery_status_t& bs);
-    virtual void        handleTrackingImageStatus(const mavlink_camera_tracking_image_status_t *tis);
     virtual void        handleVideoInfo     (const mavlink_video_stream_information_t *vi);
     virtual void        handleVideoStatus   (const mavlink_video_stream_status_t *vs);
-
-    virtual bool        trackingEnabled     () { return _trackingStatus & TRACKING_ENABLED; }
-    virtual void        setTrackingEnabled  (bool set);
-
-    virtual TrackingStatus trackingStatus   () { return _trackingStatus; }
-
-    virtual bool trackingImageStatus() { return _trackingImageStatus.tracking_status == 1; }
-    virtual QRectF trackingImageRect() { return _trackingImageRect; }
 
     /// Notify controller a parameter has changed
     virtual void        factChanged         (Fact* pFact);
@@ -355,8 +328,6 @@ signals:
     void    autoStreamChanged               ();
     void    recordTimeChanged               ();
     void    streamLabelsChanged             ();
-    void    trackingEnabledChanged          ();
-    void    trackingImageStatusChanged      ();
     void    thermalModeChanged              ();
     void    thermalOpacityChanged           ();
     void    storageStatusChanged            ();
@@ -367,7 +338,6 @@ protected:
     virtual void    _setCameraMode          (CameraMode mode);
     virtual void    _requestStreamInfo      (uint8_t streamID);
     virtual void    _requestStreamStatus    (uint8_t streamID);
-    virtual void    _requestTrackingStatus  ();
     virtual QGCVideoStreamInfo* _findStream (uint8_t streamID, bool report = true);
     virtual QGCVideoStreamInfo* _findStream (const QString name);
 
@@ -382,7 +352,7 @@ protected slots:
     virtual void    _mavCommandResult       (int vehicleId, int component, int command, int result, bool noReponseFromVehicle);
     virtual void    _dataReady              (QByteArray data);
     virtual void    _paramDone              ();
-    virtual void    _streamInfoTimeout      ();
+    virtual void    _streamTimeout          ();
     virtual void    _streamStatusTimeout    ();
     virtual void    _recTimerHandler        ();
     virtual void    _checkForVideoStreams   ();
@@ -402,7 +372,6 @@ private:
     void    _updateRanges                   (Fact* pFact);
     void    _httpRequest                    (const QString& url);
     void    _handleDefinitionFile           (const QString& url);
-    void    _ftpDownloadComplete            (const QString& fileName, const QString& errorMsg);
 
     QStringList     _loadExclusions         (QDomNode option);
     QStringList     _loadUpdates            (QDomNode option);
@@ -439,7 +408,6 @@ protected:
     QMap<QString, QStringList>          _originalOptNames;
     QMap<QString, QVariantList>         _originalOptValues;
     QMap<QString, QGCCameraParamIO*>    _paramIO;
-    int                                 _cameraSettingsRetries = 0;
     int                                 _storageInfoRetries = 0;
     int                                 _captureInfoRetries = 0;
     bool                                _resetting          = false;
@@ -450,8 +418,7 @@ protected:
     QMap<QString, QStringList>          _requestUpdates;
     QStringList                         _updatesToRequest;
     //-- Video Streams
-    int                                 _videoStreamInfoRetries   = 0;
-    int                                 _videoStreamStatusRetries = 0;
+    int                                 _requestCount       = 0;
     int                                 _currentStream      = 0;
     int                                 _expectedCount      = 1;
     QTimer                              _streamInfoTimer;
@@ -460,10 +427,4 @@ protected:
     QStringList                         _streamLabels;
     ThermalViewMode                     _thermalMode        = THERMAL_BLEND;
     double                              _thermalOpacity     = 85.0;
-    TrackingStatus                      _trackingStatus     = TRACKING_UNKNOWN;
-    QRectF                              _trackingMarquee;
-    QPointF                             _trackingPoint;
-    double                              _trackingRadius     = 0.0;
-    mavlink_camera_tracking_image_status_t         _trackingImageStatus;
-    QRectF                                         _trackingImageRect;
 };

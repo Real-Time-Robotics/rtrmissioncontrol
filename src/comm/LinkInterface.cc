@@ -22,10 +22,8 @@ LinkInterface::LinkInterface(SharedLinkConfigurationPtr& config, bool isPX4Flow)
     , _isPX4Flow(isPX4Flow)
 {
     QQmlEngine::setObjectOwnership(this, QQmlEngine::CppOwnership);
-    qRegisterMetaType<LinkInterface*>("LinkInterface*");
 
-    // This will cause the writeBytes calls to end up on the thread of the link
-    QObject::connect(this, &LinkInterface::_invokeWriteBytes, this, &LinkInterface::_writeBytes);
+    qRegisterMetaType<LinkInterface*>("LinkInterface*");
 }
 
 LinkInterface::~LinkInterface()
@@ -82,7 +80,10 @@ void LinkInterface::_freeMavlinkChannel()
 
 void LinkInterface::writeBytesThreadSafe(const char *bytes, int length)
 {
-    emit _invokeWriteBytes(QByteArray(bytes, length));
+    QByteArray byteArray(bytes, length);
+    _writeBytesMutex.lock();
+    _writeBytes(byteArray);
+    _writeBytesMutex.unlock();
 }
 
 void LinkInterface::addVehicleReference(void)

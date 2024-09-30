@@ -17,16 +17,11 @@
 #include <QUdpSocket>
 #include <QtPlugin>
 #include <QStringListModel>
-#include <QQuickStyle>
-#include <QQuickWindow>
 
 #include "QGC.h"
 #include "QGCApplication.h"
 #include "AppMessages.h"
-
-#ifndef NO_SERIAL_LINK
-    #include "SerialLink.h"
-#endif
+#include "SerialLink.h"
 
 #ifndef __mobile__
     #include "QGCSerialPortInfo.h"
@@ -216,20 +211,6 @@ bool checkAndroidWritePermission() {
 }
 #endif
 
-// To shut down QGC on Ctrl+C on Linux
-#ifdef Q_OS_LINUX
-#include <csignal>
-
-void sigHandler(int s)
-{
-    std::signal(s, SIG_DFL);
-    qgcApp()->mainRootWindow()->close();
-    QEvent event{QEvent::Quit};
-    qgcApp()->event(&event);
-}
-
-#endif /* Q_OS_LINUX */
-
 //-----------------------------------------------------------------------------
 /**
  * @brief Starts the application
@@ -296,11 +277,6 @@ int main(int argc, char *argv[])
         }
     }
 #endif
-
-#ifdef Q_OS_LINUX
-    std::signal(SIGINT, sigHandler);
-    std::signal(SIGTERM, sigHandler);
-#endif /* Q_OS_LINUX */
 
     // The following calls to qRegisterMetaType are done to silence debug output which warns
     // that we use these types in signals, and without calling qRegisterMetaType we can't queue

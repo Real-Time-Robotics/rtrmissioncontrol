@@ -58,7 +58,7 @@ QGCLabel {
 
     Connections {
         target:                 QGroundControl.multiVehicleManager
-        function onActiveVehicleChanged(activeVehicle) { _root.updateFlightModesMenu() }
+        onActiveVehicleChanged: _root.updateFlightModesMenu()
     }
 
     MouseArea {

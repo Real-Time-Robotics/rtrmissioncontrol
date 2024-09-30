@@ -147,7 +147,7 @@ Item {
                 anchors.bottom: parent.bottom
                 anchors.right:  parent.right
                 text:           qsTr("Set Logging")
-                onClicked:      filtersDialogComponent.createObject(mainWindow).open()
+                onClicked:      mainWindow.showPopupDialogFromComponent(filtersDialogComponent)
             }
         }
     }
@@ -156,8 +156,8 @@ Item {
         id: filtersDialogComponent
 
         QGCPopupDialog {
-            title:      qsTr("Logging categories")
-            buttons:    StandardButton.Close
+            title:   qsTr("Logging categories")
+            buttons: StandardButton.Close
 
             ColumnLayout {
                 RowLayout {

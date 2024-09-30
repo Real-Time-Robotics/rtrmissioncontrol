@@ -28,8 +28,4 @@ public:
     DEFINE_SETTINGFACT(maxGoToLocationDistance)
     DEFINE_SETTINGFACT(keepMapCenteredOnVehicle)
     DEFINE_SETTINGFACT(showSimpleCameraControl)
-    DEFINE_SETTINGFACT(showObstacleDistanceOverlay)
-    DEFINE_SETTINGFACT(updateHomePosition)
-    DEFINE_SETTINGFACT(enableCustomActions)
-    DEFINE_SETTINGFACT(customActionDefinitions)
 };

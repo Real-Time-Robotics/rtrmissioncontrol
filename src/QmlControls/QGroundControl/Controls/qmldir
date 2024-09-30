@@ -2,7 +2,6 @@ Module QGroundControl.Controls
 
 AnalyzePage                             1.0 AnalyzePage.qml
 AppMessages                             1.0 AppMessages.qml
-AltModeDialog                           1.0 AltModeDialog.qml
 AxisMonitor                             1.0 AxisMonitor.qml
 CameraCalcCamera                        1.0 CameraCalcCamera.qml
 CameraCalcGrid                          1.0 CameraCalcGrid.qml
@@ -33,7 +32,6 @@ JoystickThumbPad                        1.0 JoystickThumbPad.qml
 KMLOrSHPFileDialog                      1.0 KMLOrSHPFileDialog.qml
 LogReplayStatusBar                      1.0 LogReplayStatusBar.qml
 MainStatusIndicator                     1.0 MainStatusIndicator.qml
-FlightModeMenuIndicator                 1.0 FlightModeMenuIndicator.qml
 MainToolBar                             1.0 MainToolBar.qml
 MainWindowSavedState                    1.0 MainWindowSavedState.qml
 MAVLinkMessageButton                    1.0 MAVLinkMessageButton.qml
@@ -42,7 +40,6 @@ MissionItemEditor                       1.0 MissionItemEditor.qml
 MissionItemIndexLabel                   1.0 MissionItemIndexLabel.qml
 MissionItemMapVisual                    1.0 MissionItemMapVisual.qml
 MissionItemStatus                       1.0 MissionItemStatus.qml
-MockLinkOptionsDlg                      1.0 MockLinkOptionsDlg.qml
 ModeSwitchDisplay                       1.0 ModeSwitchDisplay.qml
 MultiRotorMotorDisplay                  1.0 MultiRotorMotorDisplay.qml
 OfflineMapButton                        1.0 OfflineMapButton.qml
@@ -55,8 +52,6 @@ PreFlightCheckButton                    1.0 PreFlightCheckButton.qml
 PreFlightCheckGroup                     1.0 PreFlightCheckGroup.qml
 PreFlightCheckModel                     1.0 PreFlightCheckModel.qml
 QGCButton                               1.0 QGCButton.qml
-QGCColumnButton                         1.0 QGCColumnButton.qml
-AutotuneUI                              1.0 AutotuneUI.qml
 QGCCheckBox                             1.0 QGCCheckBox.qml
 QGCColoredImage                         1.0 QGCColoredImage.qml
 QGCComboBox                             1.0 QGCComboBox.qml
@@ -80,8 +75,8 @@ QGCOptionsComboBox                      1.0 QGCOptionsComboBox.qml
 QGCPipOverlay                           1.0 QGCPipOverlay.qml
 QGCPipState                             1.0 QGCPipState.qml
 QGCPopupDialog                          1.0 QGCPopupDialog.qml
+QGCPopupDialogContainer                 1.0 QGCPopupDialogContainer.qml
 QGCRadioButton                          1.0 QGCRadioButton.qml
-QGCSimpleMessageDialog                  1.0 QGCSimpleMessageDialog.qml
 QGCSlider                               1.0 QGCSlider.qml
 QGCSwitch                               1.0 QGCSwitch.qml
 QGCTabBar                               1.0 QGCTabBar.qml
@@ -89,6 +84,9 @@ QGCTabButton                            1.0 QGCTabButton.qml
 QGCTextField                            1.0 QGCTextField.qml
 QGCToolBarButton                        1.0 QGCToolBarButton.qml
 QGCToolInsets                           1.0 QGCToolInsets.qml
+QGCViewDialog                           1.0 QGCViewDialog.qml
+QGCViewDialogContainer                  1.0 QGCViewDialogContainer.qml
+QGCViewMessage                          1.0 QGCViewMessage.qml
 RallyPointEditorHeader                  1.0 RallyPointEditorHeader.qml
 RallyPointItemEditor                    1.0 RallyPointItemEditor.qml
 RallyPointMapVisuals                    1.0 RallyPointMapVisuals.qml
@@ -103,7 +101,6 @@ SliderSwitch                            1.0 SliderSwitch.qml
 SubMenuButton                           1.0 SubMenuButton.qml
 SurveyMapVisuals                        1.0 SurveyMapVisuals.qml
 TerrainStatus                           1.0 TerrainStatus.qml
-TransectStyleComplexItemEditor          1.0 TransectStyleComplexItemEditor.qml
 TransectStyleComplexItemStats           1.0 TransectStyleComplexItemStats.qml
 TransectStyleComplexItemTabBar          1.0 TransectStyleComplexItemTabBar.qml
 TransectStyleComplexItemTerrainFollow   1.0 TransectStyleComplexItemTerrainFollow.qml

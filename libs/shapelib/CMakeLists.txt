@@ -25,17 +25,21 @@ project(shapelib C)
 message(STATUS "CMake version = ${CMAKE_VERSION}")
 message(STATUS "CMAKE_SYSTEM_NAME = ${CMAKE_SYSTEM_NAME}")
 
-# Version 3.7 or above of cmake is currently required for all platforms.
-cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
-
-set (PROJECT_VERSION_MAJOR 1)
-set (PROJECT_VERSION_MINOR 5)
-set (PROJECT_VERSION_PATCH 0)
-set (PROJECT_VERSION
-  "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+# Version 2.8.5 or above of cmake is currently required for all platforms.
+cmake_minimum_required(VERSION 2.8.5 FATAL_ERROR)
 
 # libraries are all shared by default.
-option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+
+cmake_policy(SET CMP0026 OLD) # Disallow use of the LOCATION property for build targets
+
+add_compile_options(
+	-Wno-missing-braces
+	-Wno-sign-compare
+	-Wno-return-type
+)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Use rpath?
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -54,44 +58,33 @@ set(PACKAGE shp)
 
 # Set up install locations.
 set(
-  CMAKE_INSTALL_BINDIR bin
+  CMAKE_INSTALL_BINDIR
+  ${CMAKE_INSTALL_PREFIX}/bin
   CACHE PATH "install location for user executables"
   )
 
 set(
-  CMAKE_INSTALL_LIBDIR lib
+  CMAKE_INSTALL_LIBDIR
+  ${CMAKE_INSTALL_PREFIX}/lib
   CACHE PATH "install location for object code libraries"
   )
 
 set(
-  CMAKE_INSTALL_INCLUDEDIR include
+  CMAKE_INSTALL_INCLUDEDIR
+  ${CMAKE_INSTALL_PREFIX}/include
   CACHE PATH "install location for C header files"
   )
 
 set(
-  CMAKE_INSTALL_CMAKEDIR share/${PROJECT_NAME}
+  CMAKE_INSTALL_SHP_DATADIR
+  ${CMAKE_INSTALL_PREFIX}/share/${PACKAGE}
   CACHE PATH "install location for read-only architecture-independent shp data"
   )
-
-file (RELATIVE_PATH RELATIVE_LIBDIR
-  ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
-  ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
-
-message (STATUS "CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}")
-
-if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  # Set a default build type for single-configuration cmake generators
-  # if no build type is set.
-  set (CMAKE_BUILD_TYPE Release)
-endif ()
 
 # Export build information to help other projects link installed
 # shapelib software.  Only one of these signatures is required
 # for the export_shp name.
-install(EXPORT targets
-  NAMESPACE ${PROJECT_NAME}::
-  DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-  FILE "${PROJECT_NAME}-targets.cmake")
+install(EXPORT export_shp DESTINATION ${CMAKE_INSTALL_SHP_DATADIR})
 
 # Initial boilerplate done, now build library and executables.
 
@@ -111,13 +104,10 @@ if(SHP_DROP_UNABLE_TO_OPEN_MSG)
     )
 endif(SHP_DROP_UNABLE_TO_OPEN_MSG)
 
-add_library(${PACKAGE} ${lib_SRC})
-
-target_include_directories (${PACKAGE} INTERFACE
-    $<INSTALL_INTERFACE:include>)
+add_library(shp ${lib_SRC})
 
 if(WIN32 AND NOT CYGWIN)
-  set_target_properties(${PACKAGE}
+  set_target_properties(shp
     PROPERTIES
     COMPILE_DEFINITIONS SHAPELIB_DLLEXPORT
     )
@@ -126,28 +116,28 @@ endif(WIN32 AND NOT CYGWIN)
 if(UNIX)
     find_library(M_LIB m)
     if(M_LIB)
-      TARGET_LINK_LIBRARIES(${PACKAGE} -lm)
+      TARGET_LINK_LIBRARIES(shp -lm)
     endif()
 endif(UNIX)
 
 set(shp_SOVERSION 1)
-set(shp_VERSION ${PROJECT_VERSION})
-set_target_properties(${PACKAGE}
-  PROPERTIES
+set(shp_VERSION 1.4.1)
+set_target_properties(shp
+  PROPERTIES 
   SOVERSION ${shp_SOVERSION}
   VERSION ${shp_VERSION}
   INSTALL_NAME_DIR "${CMAKE_INSTALL_LIBDIR}"
   )
 
 if(USE_RPATH)
-  set_target_properties(${PACKAGE}
-    PROPERTIES
+  set_target_properties(shp
+    PROPERTIES 
     INSTALL_RPATH "${CMAKE_INSTALL_LIBDIR}"
     )
 endif(USE_RPATH)
 
-install(TARGETS ${PACKAGE}
-  EXPORT targets
+install(TARGETS shp
+  EXPORT export_shp
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -158,7 +148,7 @@ set(executables
   shpcreate
   shpadd
   shpdump
-  shprewind
+  shprewind 
   dbfcreate
   dbfadd
   dbfdump
@@ -168,18 +158,10 @@ set(executables
 find_program(BASH_EXECUTABLE bash)
 find_program(SED_EXECUTABLE sed)
 if(BASH_EXECUTABLE AND SED_EXECUTABLE)
-  set(BUILD_TEST ON)
+  #set(BUILD_TEST ON)
 else(BASH_EXECUTABLE AND SED_EXECUTABLE)
   message(STATUS "WARNING: sed or bash not available so disabling testing")
 endif(BASH_EXECUTABLE AND SED_EXECUTABLE)
-
-if(MSVC)
-  # TODO(schwehr): How to test on Windows?
-  set(BUILD_TEST OFF)
-else(MSVC)
-  # TODO(schwehr): Temporary work around.
-  cmake_policy(SET CMP0026 OLD)
-endif(MSVC)
 
 # For the first series of tests, the user needs to have downloaded
 # from http://dl.maptools.org/dl/shapelib/shape_eg_data.zip, unpacked
@@ -194,40 +176,24 @@ if(BUILD_TEST)
   endif(EG_DATA)
 endif(BUILD_TEST)
 
-if (NOT MSVC)
-  # Set the run time path for shared libraries for non-Windows machines.
-  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-  if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    # See also INSTALL_RPATH property on the tools.
-    set (CMAKE_MACOSX_RPATH ON)
-  else ()
-    # Use relative path so that package is relocatable
-    set (CMAKE_INSTALL_RPATH "\$ORIGIN/${RELATIVE_LIBDIR}")
-  endif ()
-endif ()
-
 foreach(executable ${executables})
-  add_executable(${executable} ${executable}.c)
-  target_link_libraries(${executable} ${PACKAGE})
-  if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    # Ensure that the package is relocatable
-    set_target_properties (${TOOLS} PROPERTIES
-      INSTALL_RPATH "@loader_path/${RELATIVE_LIBDIR}")
-  endif ()
+  add_executable(${executable} EXCLUDE_FROM_ALL ${executable}.c)
+  target_link_libraries(${executable} shp)
+  if(USE_RPATH)
+    set_target_properties(${executable}
+      PROPERTIES
+      INSTALL_RPATH "${CMAKE_INSTALL_LIBDIR}"
+      )
+  endif(USE_RPATH)
   if(BUILD_TEST)
     get_target_property(${executable}_LOC ${executable} LOCATION)
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/script.sed "s?\\./${executable}?${${executable}_LOC}?\n")
   endif(BUILD_TEST)
+  install(TARGETS ${executable} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endforeach(executable ${executables})
-
-install(TARGETS ${executables}
-  EXPORT targets DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install header
 install(FILES shapefil.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-
-# For compatibility with older installation
-install(FILES shapefil.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/shapelib)
 
 if(BUILD_TEST)
   # Set up tests:
@@ -236,8 +202,8 @@ if(BUILD_TEST)
 
   # Other executables to be built to facilitate tests.
   foreach(executable shptest shputils)
-    add_executable(${executable} ${executable}.c)
-    target_link_libraries(${executable} ${PACKAGE})
+    add_executable(${executable} EXCLUDE_FROM_ALL ${executable}.c)
+    target_link_libraries(${executable} shp)
     get_target_property(${executable}_LOC ${executable} LOCATION)
     file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/script.sed "s?\\./${executable}?${${executable}_LOC}?\n")
   endforeach(executable shptest shputils)
@@ -279,5 +245,3 @@ if(BUILD_TEST)
     COMMAND ${BASH_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/sed_scripted_test3.sh
     )
 endif(BUILD_TEST)
-
-add_subdirectory (cmake)

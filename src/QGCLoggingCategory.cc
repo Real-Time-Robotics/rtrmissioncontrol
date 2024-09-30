@@ -29,8 +29,6 @@ QGC_LOGGING_CATEGORY(GuidedActionsControllerLog,    "GuidedActionsControllerLog"
 QGC_LOGGING_CATEGORY(ADSBVehicleManagerLog,         "ADSBVehicleManagerLog")
 QGC_LOGGING_CATEGORY(LocalizationLog,               "LocalizationLog")
 QGC_LOGGING_CATEGORY(VideoAllLog,                   kVideoAllLogCategory)
-QGC_LOGGING_CATEGORY(JoystickLog,                   "JoystickLog")
-
 
 QGCLoggingCategoryRegister* _instance = nullptr;
 const char* QGCLoggingCategoryRegister::_filterRulesSettingsGroup = "LoggingFilters";
@@ -116,8 +114,6 @@ void QGCLoggingCategoryRegister::setFilterRulesFromSettings(const QString& comma
 
     // Logging from GStreamer library itself controlled by gstreamer debug levels is always turned on
     filterRules += filterRuleFormat.arg("GStreamerAPILog");
-
-    filterRules += "qt.qml.connections=false";
 
     qDebug() << "Filter rules" << filterRules;
     QLoggingCategory::setFilterRules(filterRules);

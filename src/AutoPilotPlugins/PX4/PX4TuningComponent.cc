@@ -12,9 +12,24 @@
 #include "PX4AutoPilotPlugin.h"
 #include "AirframeComponent.h"
 
+static bool isCopter(MAV_TYPE type) {
+    switch (type) {
+        case MAV_TYPE_QUADROTOR:
+        case MAV_TYPE_COAXIAL:
+        case MAV_TYPE_HELICOPTER:
+        case MAV_TYPE_HEXAROTOR:
+        case MAV_TYPE_OCTOROTOR:
+        case MAV_TYPE_TRICOPTER:
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
 PX4TuningComponent::PX4TuningComponent(Vehicle* vehicle, AutoPilotPlugin* autopilot, QObject* parent)
     : VehicleComponent(vehicle, autopilot, parent)
-    , _name(tr("PID Tuning"))
+    , _name(isCopter(vehicle->vehicleType()) ? tr("PID Tuning") : tr("Tuning"))
 {
 }
 
@@ -25,7 +40,7 @@ QString PX4TuningComponent::name(void) const
 
 QString PX4TuningComponent::description(void) const
 {
-    return tr("Tuning Setup is used to tune the flight controllers.");
+    return tr("Tuning Setup is used to tune the flight characteristics of the Vehicle.");
 }
 
 QString PX4TuningComponent::iconResource(void) const
@@ -64,12 +79,12 @@ QUrl PX4TuningComponent::setupSource(void) const
         case MAV_TYPE_TRICOPTER:
             qmlFile = "qrc:/qml/PX4TuningComponentCopter.qml";
             break;
-        case MAV_TYPE_VTOL_TAILSITTER_DUOROTOR:
-        case MAV_TYPE_VTOL_TAILSITTER_QUADROTOR:
+        case MAV_TYPE_VTOL_DUOROTOR:
+        case MAV_TYPE_VTOL_QUADROTOR:
         case MAV_TYPE_VTOL_TILTROTOR:
-        case MAV_TYPE_VTOL_FIXEDROTOR:
-        case MAV_TYPE_VTOL_TAILSITTER:
-        case MAV_TYPE_VTOL_TILTWING:
+        case MAV_TYPE_VTOL_RESERVED2:
+        case MAV_TYPE_VTOL_RESERVED3:
+        case MAV_TYPE_VTOL_RESERVED4:
         case MAV_TYPE_VTOL_RESERVED5:
             qmlFile = "qrc:/qml/PX4TuningComponentVTOL.qml";
             break;

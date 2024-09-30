@@ -34,7 +34,7 @@ bool MultiSignalSpyV2::init(QObject* signalEmitter)
     bool error = false;
 
     if (!signalEmitter) {
-        qWarning() << "No signalEmitter specified";
+        qDebug() << "No signalEmitter specified";
         return false;
     }
     
@@ -46,21 +46,12 @@ bool MultiSignalSpyV2::init(QObject* signalEmitter)
         if (method.methodType() == QMetaMethod::Signal) {
             QString signalName = method.name();
 
-#if 0
-            // FIXME: CompexMissionItem has duplicate signals which still need to be fixed
-            if (signalName != "destroyed" && _rgSignalNames.contains(signalName)) {
-                qWarning() << "Duplicate signal name" << signalName;
-                error = true;
-                break;
-            }
-#endif
             _rgSignalNames.append(signalName);
-
             QSignalSpy* spy = new QSignalSpy(_signalEmitter, QStringLiteral("2%1").arg(method.methodSignature().data()).toLocal8Bit().data());
             if (spy->isValid()) {
                 _rgSpys.append(spy);
             } else {
-                qWarning() << "Invalid signal:" << signalName;
+                qDebug() << "Invalid signal:" << signalName;
                 error = true;
                 break;
             }
@@ -87,7 +78,7 @@ bool MultiSignalSpyV2::_checkSignalByMaskWorker(quint64 mask, bool multipleSigna
             Q_ASSERT(spy != nullptr);
             
             if ((multipleSignalsAllowed && spy->count() ==  0) || (!multipleSignalsAllowed && spy->count() != 1)) {
-                qWarning() << "Failed index:" << i;
+                qDebug() << "Failed index:" << i;
                 _printSignalState(mask);
                 return false;
             }
@@ -275,6 +266,7 @@ QGeoCoordinate MultiSignalSpyV2::pullQGeoCoordinateFromSignal(const char* signal
 quint64 MultiSignalSpyV2::signalNameToMask(const char* signalName)
 {
     for (int i=0; i<_rgSignalNames.count(); i++) {
+        qDebug() << "signalNameToMask" << signalName << _rgSignalNames[i];
         if (_rgSignalNames[i] == signalName) {
             return 1ll << i;
         }

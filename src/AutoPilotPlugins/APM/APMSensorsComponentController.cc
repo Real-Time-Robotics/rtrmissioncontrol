@@ -58,6 +58,9 @@ APMSensorsComponentController::APMSensorsComponentController(void)
     , _waitingForCancel(false)
     , _restoreCompassCalFitness(false)
 {
+    _compassCal.setVehicle(_vehicle);
+    connect(&_compassCal, &APMCompassCal::vehicleTextMessage, this, &APMSensorsComponentController::_handleUASTextMessage);
+
     APMAutoPilotPlugin * apmPlugin = qobject_cast<APMAutoPilotPlugin*>(_vehicle->autopilotPlugin());
 
     // Find the sensors component
@@ -271,17 +274,12 @@ void APMSensorsComponentController::_mavCommandResult(int vehicleId, int compone
                                      0,             // no delayed start
                                      0);            // no auto-reboot
 
+        } else {
+            // Onboard mag cal is not supported
+            _compassCal.startCalibration();
         }
     } else if (command == MAV_CMD_DO_START_MAG_CAL && result != MAV_RESULT_ACCEPTED) {
         _restorePreviousCompassCalFitness();
-    } else if (command == MAV_CMD_FIXED_MAG_CAL_YAW) {
-        if (result == MAV_RESULT_ACCEPTED) {
-            _appendStatusLog(tr("Successfully completed"));
-            _stopCalibration(StopCalibrationSuccessShowLog);
-        } else {
-            _appendStatusLog(tr("Failed"));
-            _stopCalibration(StopCalibrationFailed);
-        }
     }
 }
 
@@ -295,23 +293,9 @@ void APMSensorsComponentController::calibrateCompass(void)
     // Now we wait for the result to come back
 }
 
-void APMSensorsComponentController::calibrateCompassNorth(float lat, float lon, int mask)
+void APMSensorsComponentController::calibrateAccel(void)
 {
-    _startLogCalibration();
-    connect(_vehicle, &Vehicle::mavCommandResult, this, &APMSensorsComponentController::_mavCommandResult);
-    _vehicle->sendMavCommand(_vehicle->defaultComponentId(), MAV_CMD_FIXED_MAG_CAL_YAW, true /* showError */, 0 /* north*/, mask, lat, lon);
-}
-
-void APMSensorsComponentController::calibrateAccel(bool doSimpleAccelCal)
-{
-
     _calTypeInProgress = CalTypeAccel;
-    if (doSimpleAccelCal) {
-        _startLogCalibration();
-        _calTypeInProgress = CalTypeAccelFast;
-        _vehicle->startCalibration(Vehicle::CalibrationAPMAccelSimple);
-        return;
-    }
     _vehicle->vehicleLinkManager()->setCommunicationLostEnabled(false);
     _startVisualCalibration();
     _cancelButton->setEnabled(false);
@@ -446,7 +430,11 @@ void APMSensorsComponentController::cancelCalibration(void)
 {
     _cancelButton->setEnabled(false);
 
-    if (_calTypeInProgress == CalTypeOnboardCompass) {
+    if (_calTypeInProgress == CalTypeOffboardCompass) {
+        _waitingForCancel = true;
+        emit waitingForCancelChanged();
+        _compassCal.cancelCalibration();
+    } else if (_calTypeInProgress == CalTypeOnboardCompass) {
         _vehicle->sendMavCommand(_vehicle->defaultComponentId(), MAV_CMD_DO_CANCEL_MAG_CAL, true /* showError */);
         _stopCalibration(StopCalibrationCancelled);
     } else {
@@ -454,7 +442,7 @@ void APMSensorsComponentController::cancelCalibration(void)
         emit waitingForCancelChanged();
         // The firmware doesn't always allow us to cancel calibration. The best we can do is wait
         // for it to timeout.
-        _vehicle->stopCalibration(true /* showError */);
+        _vehicle->stopCalibration();
     }
 
 }
@@ -508,15 +496,12 @@ bool APMSensorsComponentController::usingUDPLink(void)
 
 void APMSensorsComponentController::_handleCommandAck(mavlink_message_t& message)
 {
-    if (_calTypeInProgress == CalTypeLevelHorizon || _calTypeInProgress == CalTypeGyro || _calTypeInProgress == CalTypePressure || _calTypeInProgress == CalTypeAccelFast) {
+    if (_calTypeInProgress == CalTypeLevelHorizon || _calTypeInProgress == CalTypeGyro || _calTypeInProgress == CalTypePressure) {
         mavlink_command_ack_t commandAck;
         mavlink_msg_command_ack_decode(&message, &commandAck);
 
         if (commandAck.command == MAV_CMD_PREFLIGHT_CALIBRATION) {
             switch (commandAck.result) {
-            case MAV_RESULT_IN_PROGRESS:
-                _appendStatusLog(tr("In progress"));
-                break;
             case MAV_RESULT_ACCEPTED:
                 _appendStatusLog(tr("Successfully completed"));
                 _stopCalibration(StopCalibrationSuccessShowLog);

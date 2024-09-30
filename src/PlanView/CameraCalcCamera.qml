@@ -9,8 +9,10 @@ import QGroundControl.FactControls      1.0
 import QGroundControl.Palette           1.0
 
 // Camera calculator "Camera" section for mission item editors
-ColumnLayout {
-    spacing: _margin
+Column {
+    anchors.left:   parent.left
+    anchors.right:  parent.right
+    spacing:        _margin
 
     property var    cameraCalc
 
@@ -19,23 +21,25 @@ ColumnLayout {
     property var    _vehicle:           QGroundControl.multiVehicleManager.activeVehicle ? QGroundControl.multiVehicleManager.activeVehicle : QGroundControl.multiVehicleManager.offlineEditingVehicle
     property var    _vehicleCameraList: _vehicle ? _vehicle.staticCameraList : []
 
-    Component.onCompleted: {
+    Component.onCompleted:{
         cameraBrandCombo.selectCurrentBrand()
         cameraModelCombo.selectCurrentModel()
     }
 
     QGCPalette { id: qgcPal; colorGroupEnabled: true }
 
-    ColumnLayout {
-        Layout.fillWidth:   true
-        spacing:            _margin
+    Column {
+        anchors.left:   parent.left
+        anchors.right:  parent.right
+        spacing:        _margin
 
         QGCComboBox {
-            id:                 cameraBrandCombo
-            Layout.fillWidth:   true
-            model:              cameraCalc.cameraBrandList
-            onModelChanged:     selectCurrentBrand()
-            onActivated:        cameraCalc.cameraBrand = currentText
+            id:             cameraBrandCombo
+            anchors.left:   parent.left
+            anchors.right:  parent.right
+            model:          cameraCalc.cameraBrandList
+            onModelChanged: selectCurrentBrand()
+            onActivated:    cameraCalc.cameraBrand = currentText
 
             Connections {
                 target:                 cameraCalc
@@ -48,12 +52,13 @@ ColumnLayout {
         }
 
         QGCComboBox {
-            id:                 cameraModelCombo
-            Layout.fillWidth:   true
-            model:              cameraCalc.cameraModelList
-            visible:            !cameraCalc.isManualCamera && !cameraCalc.isCustomCamera
-            onModelChanged:     selectCurrentModel()
-            onActivated:        cameraCalc.cameraModel = currentText
+            id:             cameraModelCombo
+            anchors.left:   parent.left
+            anchors.right:  parent.right
+            model:          cameraCalc.cameraModelList
+            visible:        !cameraCalc.isManualCamera && !cameraCalc.isCustomCamera
+            onModelChanged: selectCurrentModel()
+            onActivated:    cameraCalc.cameraModel = currentText
 
             Connections {
                 target:                 cameraCalc
@@ -66,15 +71,16 @@ ColumnLayout {
         }
 
         // Camera based grid ui
-        ColumnLayout {
-            Layout.fillWidth:   true
-            spacing:            _margin
-            visible:            !cameraCalc.isManualCamera
+        Column {
+            anchors.left:   parent.left
+            anchors.right:  parent.right
+            spacing:        _margin
+            visible:        !cameraCalc.isManualCamera
 
-            RowLayout {
-                Layout.alignment:   Qt.AlignHCenter
-                spacing:            _margin
-                visible:            !cameraCalc.fixedOrientation.value
+            Row {
+                spacing:                    _margin
+                anchors.horizontalCenter:   parent.horizontalCenter
+                visible:                    !cameraCalc.fixedOrientation.value
 
                 QGCRadioButton {
                     width:          _editFieldWidth
@@ -92,16 +98,17 @@ ColumnLayout {
             }
 
             // Custom camera specs
-            ColumnLayout {
-                id:                 custCameraCol
-                Layout.fillWidth:   true
-                spacing:            _margin
-                enabled:            cameraCalc.isCustomCamera
+            Column {
+                id:             custCameraCol
+                anchors.left:   parent.left
+                anchors.right:  parent.right
+                spacing:        _margin
+                enabled:        cameraCalc.isCustomCamera
 
                 RowLayout {
-                    Layout.fillWidth:   true
-                    spacing:            _margin
-
+                    anchors.left:   parent.left
+                    anchors.right:  parent.right
+                    spacing:        _margin
                     Item { Layout.fillWidth: true }
                     QGCLabel {
                         Layout.preferredWidth:  _root._fieldWidth
@@ -114,9 +121,9 @@ ColumnLayout {
                 }
 
                 RowLayout {
-                    Layout.fillWidth:   true
-                    spacing:            _margin
-
+                    anchors.left:   parent.left
+                    anchors.right:  parent.right
+                    spacing:        _margin
                     QGCLabel { text: qsTr("Sensor"); Layout.fillWidth: true }
                     FactTextField {
                         Layout.preferredWidth:  _root._fieldWidth
@@ -129,9 +136,9 @@ ColumnLayout {
                 }
 
                 RowLayout {
-                    Layout.fillWidth:   true
-                    spacing:            _margin
-
+                    anchors.left:   parent.left
+                    anchors.right:  parent.right
+                    spacing:        _margin
                     QGCLabel { text: qsTr("Image"); Layout.fillWidth: true }
                     FactTextField {
                         Layout.preferredWidth:  _root._fieldWidth
@@ -144,8 +151,9 @@ ColumnLayout {
                 }
 
                 RowLayout {
-                    Layout.fillWidth:   true
-                    spacing:            _margin
+                    anchors.left:   parent.left
+                    anchors.right:  parent.right
+                    spacing:        _margin
                     QGCLabel {
                         text:                   qsTr("Focal length")
                         Layout.fillWidth:       true
@@ -155,7 +163,7 @@ ColumnLayout {
                         fact:                   cameraCalc.focalLength
                     }
                 }
-            }
-        }
-    }
-}
+            } // Column - custom camera specs
+        } // Column - Camera spec based ui
+    } // Column - Camera Section
+} // Column

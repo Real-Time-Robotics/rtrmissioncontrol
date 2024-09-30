@@ -25,12 +25,11 @@ class SurveyComplexItem : public TransectStyleComplexItem
 public:
     /// @param flyView true: Created for use in the Fly View, false: Created for use in the Plan View
     /// @param kmlOrShpFile Polygon comes from this file, empty for default polygon
-    SurveyComplexItem(PlanMasterController* masterController, bool flyView, const QString& kmlOrShpFile);
+    SurveyComplexItem(PlanMasterController* masterController, bool flyView, const QString& kmlOrShpFile, QObject* parent);
 
-    Q_PROPERTY(Fact*            gridAngle              READ gridAngle              CONSTANT)
-    Q_PROPERTY(Fact*            flyAlternateTransects  READ flyAlternateTransects  CONSTANT)
-    Q_PROPERTY(Fact*            splitConcavePolygons   READ splitConcavePolygons   CONSTANT)
-    Q_PROPERTY(QGeoCoordinate   centerCoordinate       READ centerCoordinate       WRITE setCenterCoordinate)
+    Q_PROPERTY(Fact* gridAngle              READ gridAngle              CONSTANT)
+    Q_PROPERTY(Fact* flyAlternateTransects  READ flyAlternateTransects  CONSTANT)
+    Q_PROPERTY(Fact* splitConcavePolygons   READ splitConcavePolygons   CONSTANT)
 
     Fact* gridAngle             (void) { return &_gridAngleFact; }
     Fact* flyAlternateTransects (void) { return &_flyAlternateTransectsFact; }
@@ -39,15 +38,12 @@ public:
     Q_INVOKABLE void rotateEntryPoint(void);
 
     // Overrides from ComplexMissionItem
-    QString         patternName         (void) const final { return name; }
-    bool            load                (const QJsonObject& complexObject, int sequenceNumber, QString& errorString) final;
-    QString         mapVisualQML        (void) const final { return QStringLiteral("SurveyMapVisual.qml"); }
-    QString         presetsSettingsGroup(void) { return settingsGroup; }
-    void            savePreset          (const QString& name);
-    void            loadPreset          (const QString& name);
-    bool            isSurveyItem        (void) const final { return true; }
-    QGeoCoordinate  centerCoordinate    (void) const { return _surveyAreaPolygon.center(); }
-    void            setCenterCoordinate (const QGeoCoordinate& coordinate) { _surveyAreaPolygon.setCenter(coordinate); }
+    QString patternName         (void) const final { return name; }
+    bool    load                (const QJsonObject& complexObject, int sequenceNumber, QString& errorString) final;
+    QString mapVisualQML        (void) const final { return QStringLiteral("SurveyMapVisual.qml"); }
+    QString presetsSettingsGroup(void) { return settingsGroup; }
+    void    savePreset          (const QString& name);
+    void    loadPreset          (const QString& name);
 
     // Overrides from TransectStyleComplexItem
     void    save                (QJsonArray&  planItems) final;
@@ -122,7 +118,7 @@ private:
     bool _hoverAndCaptureEnabled(void) const;
     bool _loadV3(const QJsonObject& complexObject, int sequenceNumber, QString& errorString);
     bool _loadV4V5(const QJsonObject& complexObject, int sequenceNumber, QString& errorString, int version, bool forPresets);
-    void _saveCommon(QJsonObject& complexObject);
+    void _saveWorker(QJsonObject& complexObject);
     void _rebuildTransectsPhase1Worker(bool refly);
     void _rebuildTransectsPhase1WorkerSinglePolygon(bool refly);
     void _rebuildTransectsPhase1WorkerSplitPolygons(bool refly);

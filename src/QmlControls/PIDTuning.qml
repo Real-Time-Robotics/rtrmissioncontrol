@@ -17,30 +17,39 @@ import QGroundControl.Controls      1.0
 import QGroundControl.FactSystem    1.0
 import QGroundControl.FactControls  1.0
 import QGroundControl.ScreenTools   1.0
-import QGroundControl.Vehicle       1.0
 
 RowLayout {
     layoutDirection: Qt.RightToLeft
 
-    property var    axis
-    property string unit
-    property string title
-    property var    tuningMode
-    property double chartDisplaySec:     8 // number of seconds to display
-    property bool   showAutoModeChange:  false
-    property bool   showAutoTuning:      false
-    property alias  autotuningEnabled:   autotuningEnabled.checked
+    property var tuneList
+    property var params
 
+    property real   _chartHeight:       ScreenTools.defaultFontPixelHeight * 20
     property real   _margins:           ScreenTools.defaultFontPixelHeight / 2
-    property int    _currentAxis:       0
-    property var    _xAxis:             xAxis
-    property var    _yAxis:             yAxis
+    property string _currentTuneType:   tuneList[0]
+    property real   _rollRate:          globals.activeVehicle.rollRate.value
+    property real   _rollRateSetpoint:  globals.activeVehicle.setpoint.rollRate.value
+    property real   _pitchRate:         globals.activeVehicle.pitchRate.value
+    property real   _pitchRateSetpoint: globals.activeVehicle.setpoint.pitchRate.value
+    property real   _yawRate:           globals.activeVehicle.yawRate.value
+    property real   _yawRateSetpoint:   globals.activeVehicle.setpoint.yawRate.value
+    property var    _valueRateXAxis:    valueRateXAxis
+    property var    _valueRateYAxis:    valueRateYAxis
     property int    _msecs:             0
     property double _last_t:            0
     property var    _savedTuningParamValues:    [ ]
+    property bool   _showCharts: !ScreenTools.isMobile // TODO: test and enable on mobile
+
+    // The following are set when getValues is called
+    property real   _valueRate
+    property real   _valueRateSetpoint
 
     readonly property int _tickSeparation:      5
     readonly property int _maxTickSections:     10
+    readonly property int _tuneListRollIndex:   0
+    readonly property int _tuneListPitchIndex:  1
+    readonly property int _tuneListYawIndex:    2
+    readonly property int _chartDisplaySec:     3 // number of seconds to display
 
     function adjustYAxisMin(yAxis, newValue) {
         var newMin = Math.min(yAxis.min, newValue)
@@ -60,73 +69,89 @@ RowLayout {
         yAxis.max = newMax
     }
 
-    function resetGraphs() {
-        for (var i = 0; i < chart.count; ++i) {
-            chart.series(i).removePoints(0, chart.series(i).count)
+    function getValues() {
+        if (_currentTuneType === tuneList[_tuneListRollIndex]) {
+            _valueRate = _rollRate
+            _valueRateSetpoint = _rollRateSetpoint
+        } else if (_currentTuneType === tuneList[_tuneListPitchIndex]) {
+            _valueRate = _pitchRate
+            _valueRateSetpoint = _pitchRateSetpoint
+        } else if (_currentTuneType === tuneList[_tuneListYawIndex]) {
+            _valueRate = _yawRate
+            _valueRateSetpoint = _yawRateSetpoint
         }
-        _xAxis.min = 0
-        _xAxis.max = 0
-        _yAxis.min = 0
-        _yAxis.max = 0
+    }
+
+    function resetGraphs() {
+        valueRateSeries.removePoints(0, valueRateSeries.count)
+        valueRateSetpointSeries.removePoints(0, valueRateSetpointSeries.count)
+        _valueRateXAxis.min = 0
+        _valueRateXAxis.max = 0
+        _valueRateYAxis.min = 0
+        _valueRateYAxis.max = 10
         _msecs = 0
         _last_t = 0
     }
 
+    function currentTuneTypeIndex() {
+        if (_currentTuneType === tuneList[_tuneListRollIndex]) {
+            return _tuneListRollIndex
+        } else if (_currentTuneType === tuneList[_tuneListPitchIndex]) {
+            return _tuneListPitchIndex
+        } else if (_currentTuneType === tuneList[_tuneListYawIndex]) {
+            return _tuneListYawIndex
+        }
+    }
+
     // Save the current set of tuning values so we can reset to them
     function saveTuningParamValues() {
+        var tuneTypeIndex = currentTuneTypeIndex()
+
         _savedTuningParamValues = [ ]
-        for (var i=0; i<axis[_currentAxis].params.count; i++) {
+        for (var i=0; i<params[tuneTypeIndex].count; i++) {
             var currentTuneParam = controller.getParameterFact(-1,
-                axis[_currentAxis].params.get(i).param)
+                params[tuneTypeIndex].get(i).param)
             _savedTuningParamValues.push(currentTuneParam.valueString)
         }
         savedRepeater.model = _savedTuningParamValues
     }
 
     function resetToSavedTuningParamValues() {
-        for (var i=0; i<axis[_currentAxis].params.count; i++) {
+        var tuneTypeIndex = currentTuneTypeIndex()
+
+        for (var i=0; i<params[tuneTypeIndex].count; i++) {
             var currentTuneParam = controller.getParameterFact(-1,
-                axis[_currentAxis].params.get(i).param)
+                params[tuneTypeIndex].get(i).param)
             currentTuneParam.value = _savedTuningParamValues[i]
         }
     }
 
-    function axisIndexChanged() {
-        chart.removeAllSeries()
-        axis[_currentAxis].plot.forEach(function(e) {
-            chart.createSeries(ChartView.SeriesTypeLine, e.name, xAxis, yAxis);
-        })
-        var chartTitle = axis[_currentAxis].plotTitle
-        if (chartTitle == null)
-            chartTitle = axis[_currentAxis].name
-        chart.title = chartTitle + " " + title
+    Component.onCompleted: {
+        globals.activeVehicle.setPIDTuningTelemetryMode(true)
+        saveTuningParamValues()
+    }
+
+    Component.onDestruction: globals.activeVehicle.setPIDTuningTelemetryMode(false)
+
+    on_CurrentTuneTypeChanged: {
         saveTuningParamValues()
         resetGraphs()
     }
 
-    Component.onCompleted: {
-        axisIndexChanged()
-        globals.activeVehicle.setPIDTuningTelemetryMode(tuningMode)
-        saveTuningParamValues()
-    }
-
-    Component.onDestruction: globals.activeVehicle.setPIDTuningTelemetryMode(Vehicle.ModeDisabled)
-    on_CurrentAxisChanged: axisIndexChanged()
-
     ValueAxis {
-        id:             xAxis
+        id:             valueRateXAxis
         min:            0
         max:            0
         labelFormat:    "%.2f"
-        titleText:      qsTr("sec")
+        titleText:      "sec"
         tickCount:      11
     }
 
     ValueAxis {
-        id:         yAxis
+        id:         valueRateYAxis
         min:        0
         max:        10
-        titleText:  unit
+        titleText:  "deg/s"
         tickCount:  Math.min(((max - min) / _tickSeparation), _maxTickSections) + 1
     }
 
@@ -137,29 +162,21 @@ RowLayout {
         repeat:     true
 
         onTriggered: {
-            _xAxis.max = _msecs / 1000
-            _xAxis.min = _msecs / 1000 - chartDisplaySec
+            _valueRateXAxis.max = _msecs / 1000
+            _valueRateXAxis.min = _msecs / 1000 - _chartDisplaySec
 
-            var firstPoint = _msecs == 0
+            getValues()
 
-            var len = axis[_currentAxis].plot.length
-            for (var i = 0; i < len; ++i) {
-                var value = axis[_currentAxis].plot[i].value
-                if (!isNaN(value)) {
-                    chart.series(i).append(_msecs/1000, value)
-                    if (firstPoint) {
-                        _yAxis.min = value
-                        _yAxis.max = value
-                    } else {
-                        adjustYAxisMin(_yAxis, value)
-                        adjustYAxisMax(_yAxis, value)
-                    }
-                    // limit history
-                    var minSec = _msecs/1000 - 3*60
-                    while (chart.series(i).count > 0 && chart.series(i).at(0).x < minSec) {
-                        chart.series(i).remove(0)
-                    }
-                }
+            if (!isNaN(_valueRate)) {
+                valueRateSeries.append(_msecs/1000, _valueRate)
+                adjustYAxisMin(_valueRateYAxis, _valueRate)
+                adjustYAxisMax(_valueRateYAxis, _valueRate)
+            }
+
+            if (!isNaN(_valueRateSetpoint)) {
+                valueRateSetpointSeries.append(_msecs/1000, _valueRateSetpoint)
+                adjustYAxisMin(_valueRateYAxis, _valueRateSetpoint)
+                adjustYAxisMax(_valueRateYAxis, _valueRateSetpoint)
             }
 
             var t = new Date().getTime() // in ms
@@ -171,132 +188,115 @@ RowLayout {
         property int _maxPointCount:    10000 / interval
     }
 
-    QGCFlickable {
-        contentWidth:           parent.width * 0.4
-        contentHeight:          rightColumn.height
-        Layout.fillHeight:      true
-        Layout.minimumWidth:    contentWidth
-        Layout.maximumWidth:    contentWidth
-        Layout.alignment:       Qt.AlignTop
+    Column {
+        spacing:            _margins
+        Layout.alignment:   Qt.AlignTop
+        width:          parent.width * (_showCharts ? 0.4 : 1)
 
         Column {
-            spacing:            _margins
-            Layout.alignment:   Qt.AlignTop
+            QGCLabel { text: qsTr("Tuning Axis:") }
 
-            width:          parent.width
-            id:             rightColumn
+            RowLayout {
+                spacing: _margins
 
-            Row {
-                id:        _autotuneSelectRow
-                spacing:   _margins
-                visible:   showAutoTuning
-
-                Switch {
-                    id:        autotuningEnabled
-                    checked:   true
-                }
-
-                QGCLabel {
-                    color:   qgcPal.text
-                    text:    autotuningEnabled.checked ? qsTr("Autotune enabled") : qsTr("Autotune disabled")
-                }
-            }
-
-            Column {
-                width:     parent.width
-                visible:   _autotuneSelectRow.visible && autotuningEnabled.checked
-
-                AutotuneUI {
-                    anchors {
-                        top:         parent.top
-                        topMargin:   _margins * 2
-                    }
-
-                    width:     parent.width
-                }
-            }
-
-            Column {
-                width:     parent.width
-                visible:   !_autotuneSelectRow.visible || !autotuningEnabled.checked
-
-                Column {
-                    RowLayout {
-                        spacing: _margins
-                        visible: axis.length > 1
-
-                        QGCLabel { text: qsTr("Select Tuning:") }
-
-                        Repeater {
-                            model: axis
-                            QGCRadioButton {
-                                text:           modelData.name
-                                checked:        index == _currentAxis
-                                onClicked: _currentAxis = index
-                            }
-                        }
-                    }
-                }
-
-                // Instantiate all sliders (instead of switching the model), so that
-                // values are not changed unexpectedly if they do not match with a tick
-                // value
                 Repeater {
-                    model: axis
-                    FactSliderPanel {
-                        width:       parent.width
-                        visible:     _currentAxis === index
-                        sliderModel: axis[index].params
-                    }
-                }
-
-                Column {
-                    QGCLabel { text: qsTr("Clipboard Values:") }
-
-                    GridLayout {
-                        rows:           savedRepeater.model.length
-                        flow:           GridLayout.TopToBottom
-                        rowSpacing:     0
-                        columnSpacing:  _margins
-
-                        Repeater {
-                            model: axis[_currentAxis].params
-
-                            QGCLabel { text: param }
-                        }
-
-                        Repeater {
-                            id: savedRepeater
-
-                            QGCLabel { text: modelData }
-                        }
-                    }
-                }
-
-                RowLayout {
-                    spacing: _margins
-
-                    QGCButton {
-                        text:       qsTr("Save To Clipboard")
-                        onClicked:  saveTuningParamValues()
-                    }
-
-                    QGCButton {
-                        text:       qsTr("Restore From Clipboard")
-                        onClicked:  resetToSavedTuningParamValues()
+                    model: tuneList
+                    QGCRadioButton {
+                        text:           modelData
+                        checked:        _currentTuneType === modelData
+                        onClicked: _currentTuneType = modelData
                     }
                 }
             }
         }
+
+        QGCLabel { text: qsTr("Tuning Values:") }
+
+
+        // Instantiate all sliders (instead of switching the model), so that
+        // values are not changed unexpectedly if they do not match with a tick
+        // value
+        FactSliderPanel {
+            width:       parent.width
+            visible:     _currentTuneType === tuneList[_tuneListRollIndex]
+            sliderModel: params[_tuneListRollIndex]
+        }
+        FactSliderPanel {
+            width:       parent.width
+            visible:     _currentTuneType === tuneList[_tuneListPitchIndex]
+            sliderModel: params[_tuneListPitchIndex]
+        }
+        FactSliderPanel {
+            width:       parent.width
+            visible:     _currentTuneType === tuneList[_tuneListYawIndex]
+            sliderModel: params[_tuneListYawIndex]
+        }
+
+        Column {
+            QGCLabel { text: qsTr("Clipboard Values:") }
+
+            GridLayout {
+                rows:           savedRepeater.model.length
+                flow:           GridLayout.TopToBottom
+                rowSpacing:     0
+                columnSpacing:  _margins
+
+                Repeater {
+                    model: params[tuneList.indexOf(_currentTuneType)]
+
+                    QGCLabel { text: param }
+                }
+
+                Repeater {
+                    id: savedRepeater
+
+                    QGCLabel { text: modelData }
+                }
+            }
+        }
+
+        RowLayout {
+            spacing: _margins
+
+            QGCButton {
+                text:       qsTr("Save To Clipboard")
+                onClicked:  saveTuningParamValues()
+            }
+
+            QGCButton {
+                text:       qsTr("Restore From Clipboard")
+                onClicked:  resetToSavedTuningParamValues()
+            }
+        }
     }
 
-    ColumnLayout {
+    Column {
+        Layout.fillWidth: true
+        Layout.alignment:   Qt.AlignTop
+        visible:            _showCharts
+
         ChartView {
-            id:                 chart
+            id:                 ratesChart
+            anchors.left:       parent.left
+            anchors.right:      parent.right
+            height:             availableHeight * 0.75
+            title:              _currentTuneType + qsTr(" Rate")
             antialiasing:       true
             legend.alignment:   Qt.AlignBottom
-            Layout.fillHeight:  true
-            Layout.fillWidth:   true
+
+            LineSeries {
+                id:         valueRateSeries
+                name:       "Response"
+                axisY:      valueRateYAxis
+                axisX:      valueRateXAxis
+            }
+
+            LineSeries {
+                id:         valueRateSetpointSeries
+                name:       "Setpoint"
+                axisY:      valueRateYAxis
+                axisX:      valueRateXAxis
+            }
 
             // enable mouse dragging
             MouseArea {
@@ -305,16 +305,9 @@ RowLayout {
                 anchors.fill: parent
                 onPressed: {
                     _startPoint = Qt.point(mouse.x, mouse.y)
-                    var start = chart.mapToValue(_startPoint)
-                    var next = chart.mapToValue(Qt.point(mouse.x+1, mouse.y+1))
+                    var start = ratesChart.mapToValue(_startPoint)
+                    var next = ratesChart.mapToValue(Qt.point(mouse.x+1, mouse.y+1))
                     _scaling = next.x - start.x
-                }
-                onWheel: {
-                    if (wheel.angleDelta.y > 0)
-                        chartDisplaySec /= 1.2
-                    else
-                        chartDisplaySec *= 1.2
-                    _xAxis.min = _xAxis.max - chartDisplaySec
                 }
                 onPositionChanged: {
                     if(_startPoint != undefined) {
@@ -322,8 +315,8 @@ RowLayout {
                         var cp = Qt.point(mouse.x, mouse.y)
                         var dx = (cp.x - _startPoint.x) * _scaling
                         _startPoint = cp
-                        _xAxis.max -= dx
-                        _xAxis.min -= dx
+                        _valueRateXAxis.max -= dx
+                        _valueRateXAxis.min -= dx
                     }
                 }
 
@@ -348,30 +341,16 @@ RowLayout {
                 onClicked: {
                     dataTimer.running = !dataTimer.running
                     _last_t = 0
-                    if (showAutoModeChange && autoModeChange.checked) {
+                    if (autoModeChange.checked) {
                         globals.activeVehicle.flightMode = dataTimer.running ? "Stabilized" : globals.activeVehicle.pauseFlightMode
-                    }
-                }
-            }
-            Connections {
-                target: globals.activeVehicle
-                onArmedChanged: {
-                    if (armed && !dataTimer.running) { // start plotting on arming if not already running
-                        dataTimer.running = true
-                        _last_t = 0
                     }
                 }
             }
         }
 
         QGCCheckBox {
-            visible: showAutoModeChange
             id:     autoModeChange
             text:   qsTr("Automatic Flight Mode Switching")
-            onClicked: {
-                if (checked)
-                    dataTimer.running = false
-            }
         }
 
         Column {

@@ -28,7 +28,6 @@ ToolStripActionList {
         GuidedActionLand { },
         GuidedActionRTL { },
         GuidedActionPause { },
-        GuidedActionActionList { },
-        GuidedActionGripper { }
+        GuidedActionActionList { }
     ]
 }

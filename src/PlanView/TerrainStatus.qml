@@ -50,6 +50,7 @@ Rectangle {
 
     QGCFlickable {
         id:                 terrainProfileFlickable
+        //anchors.margins:    _margins
         anchors.top:        parent.top
         anchors.bottom:     parent.bottom
         anchors.leftMargin: titleLabel.contentHeight

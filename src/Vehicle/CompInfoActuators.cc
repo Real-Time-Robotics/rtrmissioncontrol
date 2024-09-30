@@ -16,10 +16,10 @@ CompInfoActuators::CompInfoActuators(uint8_t compId, Vehicle* vehicle, QObject* 
 
 }
 
-void CompInfoActuators::setJson(const QString& metadataJsonFileName)
+void CompInfoActuators::setJson(const QString& metadataJsonFileName, const QString& translationJsonFileName)
 {
     if (!metadataJsonFileName.isEmpty()) {
-        vehicle->setActuatorsMetadata(compId, metadataJsonFileName);
+        vehicle->setActuatorsMetadata(compId, metadataJsonFileName, translationJsonFileName);
     }
 }
 

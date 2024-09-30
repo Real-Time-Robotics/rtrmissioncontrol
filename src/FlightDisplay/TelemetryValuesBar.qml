@@ -92,23 +92,20 @@ Rectangle {
             y:                          telemetryLayout.y
             width:                      telemetryLayout.width
             height:                     telemetryLayout.height
-            hoverEnabled:               !ScreenTools.isMobile
+            hoverEnabled:               true
             propagateComposedEvents:    true
-
-            onClicked: {
-                if (ScreenTools.isMobile && !valueArea.settingsUnlocked) {
-                    valueArea.settingsUnlocked = true
-                    mouse.accepted = true
-                } else {
-                    mouse.accepted = false
-                }
-            }
         }
 
         HorizontalFactValueGrid {
             id:                     valueArea
             userSettingsGroup:      telemetryBarUserSettingsGroup
             defaultSettingsGroup:   telemetryBarDefaultSettingsGroup
+        }
+
+        GuidedActionConfirm {
+            Layout.fillWidth:   true
+            guidedController:   _guidedController
+            altitudeSlider:     _guidedAltSlider
         }
     }
 }

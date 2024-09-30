@@ -33,7 +33,6 @@ public:
     Q_PROPERTY(bool imageRefreshFlag                       READ imageRefreshFlag          NOTIFY imageRefreshFlagChanged)
     Q_PROPERTY(bool hasUnsetRequiredFunctions              READ hasUnsetRequiredFunctions NOTIFY hasUnsetRequiredFunctionsChanged)
     Q_PROPERTY(bool motorAssignmentActive                  READ motorAssignmentActive     NOTIFY motorAssignmentActiveChanged)
-    Q_PROPERTY(bool motorAssignmentEnabled                 READ motorAssignmentEnabled    NOTIFY motorAssignmentEnabledChanged)
     Q_PROPERTY(QString motorAssignmentMessage              READ motorAssignmentMessage    NOTIFY motorAssignmentMessageChanged)
 
     Q_PROPERTY(ActuatorTesting::ActuatorTest* actuatorTest                      READ actuatorTest              CONSTANT)
@@ -76,7 +75,6 @@ public:
     Q_INVOKABLE void spinCurrentMotor() { _motorAssignment.spinCurrentMotor(); }
     Q_INVOKABLE void abortMotorAssignment();
     bool motorAssignmentActive() const { return _motorAssignment.active(); }
-    bool motorAssignmentEnabled() const { return _motorAssignmentEnabled; }
     const QString& motorAssignmentMessage() const { return _motorAssignment.message(); }
 
 public slots:
@@ -88,7 +86,6 @@ signals:
     void imageRefreshFlagChanged();
     void hasUnsetRequiredFunctionsChanged();
     void motorAssignmentActiveChanged();
-    void motorAssignmentEnabledChanged();
     void motorAssignmentMessageChanged();
     void actuatorActionsChanged();
 
@@ -106,8 +103,6 @@ private:
 
     void highlightActuators(bool highlight);
 
-    void updateFunctionMetadata();
-
     QSet<Fact*> _subscribedFacts{};
     QJsonDocument _jsonMetadata;
     bool _init{false};
@@ -117,11 +112,9 @@ private:
     ActuatorTesting::ActuatorTest _actuatorTest;
     Mixer::Mixers _mixer;
     MotorAssignment _motorAssignment;
-    bool _motorAssignmentEnabled{false};
     bool _hasUnsetRequiredFunctions{false};
     bool _imageRefreshFlag{false}; ///< indicator to QML to reload the image
     int _selectedActuatorOutput{0};
     Vehicle* _vehicle{nullptr};
-    QMap<int, QString> _usedMixerLabels;
 };
 

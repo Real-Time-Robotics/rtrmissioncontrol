@@ -538,7 +538,6 @@ void JoystickConfigController::_writeCalibration()
     Vehicle* vehicle = qgcApp()->toolbox()->multiVehicleManager()->activeVehicle();
     if (vehicle) {
         vehicle->setJoystickEnabled(true);
-        vehicle->saveJoystickSettings();
     }
 }
 

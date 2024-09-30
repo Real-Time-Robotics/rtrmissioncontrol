@@ -27,9 +27,10 @@
 #include "APMMavlinkStreamRateSettings.h"
 #include "FirmwareUpgradeSettings.h"
 #include "ADSBVehicleManagerSettings.h"
-#include "GimbalControllerSettings.h"
+#if defined(QGC_AIRMAP_ENABLED)
+#include "AirMapSettings.h"
+#endif
 #include <QVariantList>
-#include "RemoteIDSettings.h"
 
 /// Provides access to all app settings
 class SettingsManager : public QGCTool
@@ -39,6 +40,9 @@ class SettingsManager : public QGCTool
 public:
     SettingsManager(QGCApplication* app, QGCToolbox* toolbox);
 
+#if defined(QGC_AIRMAP_ENABLED)
+    Q_PROPERTY(QObject* airMapSettings                  READ airMapSettings                 CONSTANT)
+#endif
     Q_PROPERTY(QObject* appSettings                     READ appSettings                    CONSTANT)
     Q_PROPERTY(QObject* unitsSettings                   READ unitsSettings                  CONSTANT)
     Q_PROPERTY(QObject* autoConnectSettings             READ autoConnectSettings            CONSTANT)
@@ -51,14 +55,15 @@ public:
     Q_PROPERTY(QObject* offlineMapsSettings             READ offlineMapsSettings            CONSTANT)
     Q_PROPERTY(QObject* firmwareUpgradeSettings         READ firmwareUpgradeSettings        CONSTANT)
     Q_PROPERTY(QObject* adsbVehicleManagerSettings      READ adsbVehicleManagerSettings     CONSTANT)
-    Q_PROPERTY(QObject* gimbalControllerSettings        READ gimbalControllerSettings       CONSTANT)
 #if !defined(NO_ARDUPILOT_DIALECT)
     Q_PROPERTY(QObject* apmMavlinkStreamRateSettings    READ apmMavlinkStreamRateSettings   CONSTANT)
 #endif
-    Q_PROPERTY(QObject* remoteIDSettings                READ remoteIDSettings               CONSTANT)
     // Override from QGCTool
     virtual void setToolbox(QGCToolbox *toolbox);
 
+#if defined(QGC_AIRMAP_ENABLED)
+    AirMapSettings*         airMapSettings      (void) { return _airMapSettings; }
+#endif
     AppSettings*                    appSettings                 (void) { return _appSettings; }
     UnitsSettings*                  unitsSettings               (void) { return _unitsSettings; }
     AutoConnectSettings*            autoConnectSettings         (void) { return _autoConnectSettings; }
@@ -71,12 +76,13 @@ public:
     OfflineMapsSettings*            offlineMapsSettings         (void) { return _offlineMapsSettings; }
     FirmwareUpgradeSettings*        firmwareUpgradeSettings     (void) { return _firmwareUpgradeSettings; }
     ADSBVehicleManagerSettings*     adsbVehicleManagerSettings  (void) { return _adsbVehicleManagerSettings; }
-    GimbalControllerSettings*       gimbalControllerSettings    (void) { return _gimbalControllerSettings; }
 #if !defined(NO_ARDUPILOT_DIALECT)
     APMMavlinkStreamRateSettings*   apmMavlinkStreamRateSettings(void) { return _apmMavlinkStreamRateSettings; }
 #endif
-    RemoteIDSettings*               remoteIDSettings            (void) { return _remoteIDSettings; }
 private:
+#if defined(QGC_AIRMAP_ENABLED)
+    AirMapSettings*         _airMapSettings;
+#endif
     AppSettings*                    _appSettings;
     UnitsSettings*                  _unitsSettings;
     AutoConnectSettings*            _autoConnectSettings;
@@ -89,11 +95,9 @@ private:
     OfflineMapsSettings*            _offlineMapsSettings;
     FirmwareUpgradeSettings*        _firmwareUpgradeSettings;
     ADSBVehicleManagerSettings*     _adsbVehicleManagerSettings;
-    GimbalControllerSettings*       _gimbalControllerSettings;
 #if !defined(NO_ARDUPILOT_DIALECT)
     APMMavlinkStreamRateSettings*   _apmMavlinkStreamRateSettings;
 #endif
-    RemoteIDSettings*               _remoteIDSettings;
 };
 
 #endif

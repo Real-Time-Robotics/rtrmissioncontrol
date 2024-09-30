@@ -23,7 +23,7 @@ QGCPopupDialog {
     title:      qsTr("MockLink Options")
     buttons:    StandardButton.Close
 
-    property var link
+    property var link: dialogProperties.link
 
     ColumnLayout {
         spacing: ScreenTools.defaultFontPixelHeight / 2
@@ -33,7 +33,7 @@ QGCPopupDialog {
             text:               qsTr("Stop Heartbeats")
             onClicked: {
                 link.setCommLost(true)
-                close()
+                reject()
             }
         }
 
@@ -42,7 +42,7 @@ QGCPopupDialog {
             text:               qsTr("Start Heartbeats")
             onClicked: {
                 link.setCommLost(false)
-                close()
+                reject()
             }
         }
 
@@ -51,7 +51,7 @@ QGCPopupDialog {
             text:               qsTr("Connection Removed")
             onClicked: {
                 link.simulateConnectionRemoved()
-                close()
+                reject()
             }
         }
     }

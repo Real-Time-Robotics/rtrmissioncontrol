@@ -38,9 +38,8 @@ public:
 
     Q_PROPERTY(bool             hasVideo                READ    hasVideo                                    NOTIFY hasVideoChanged)
     Q_PROPERTY(bool             isGStreamer             READ    isGStreamer                                 NOTIFY isGStreamerChanged)
-    Q_PROPERTY(bool             isUvc                   READ    isUvc                                       NOTIFY isUvcChanged)
     Q_PROPERTY(bool             isTaisync               READ    isTaisync       WRITE   setIsTaisync        NOTIFY isTaisyncChanged)
-    Q_PROPERTY(QString          uvcVideoSourceID        READ    uvcVideoSourceID                            NOTIFY uvcVideoSourceIDChanged)
+    Q_PROPERTY(QString          videoSourceID           READ    videoSourceID                               NOTIFY videoSourceIDChanged)
     Q_PROPERTY(bool             uvcEnabled              READ    uvcEnabled                                  CONSTANT)
     Q_PROPERTY(bool             fullScreen              READ    fullScreen      WRITE   setfullScreen       NOTIFY fullScreenChanged)
     Q_PROPERTY(VideoReceiver*   videoReceiver           READ    videoReceiver                               CONSTANT)
@@ -59,10 +58,9 @@ public:
 
     virtual bool        hasVideo            ();
     virtual bool        isGStreamer         ();
-    virtual bool        isUvc               ();
     virtual bool        isTaisync           () { return _isTaisync; }
     virtual bool        fullScreen          () { return _fullScreen; }
-    virtual QString     uvcVideoSourceID    () { return _uvcVideoSourceID; }
+    virtual QString     videoSourceID       () { return _videoSourceID; }
     virtual double      aspectRatio         ();
     virtual double      thermalAspectRatio  ();
     virtual double      hfov                ();
@@ -116,8 +114,7 @@ public:
 signals:
     void hasVideoChanged            ();
     void isGStreamerChanged         ();
-    void isUvcChanged               ();
-    void uvcVideoSourceIDChanged    ();
+    void videoSourceIDChanged       ();
     void fullScreenChanged          ();
     void isAutoStreamChanged        ();
     void isTaisyncChanged           ();
@@ -173,7 +170,7 @@ protected:
     QAtomicInteger<bool>    _recording              = false;
     QAtomicInteger<quint32> _videoSize              = 0;
     VideoSettings*          _videoSettings          = nullptr;
-    QString                 _uvcVideoSourceID;
+    QString                 _videoSourceID;
     bool                    _fullScreen             = false;
     Vehicle*                _activeVehicle          = nullptr;
 };

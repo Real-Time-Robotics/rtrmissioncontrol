@@ -8,10 +8,9 @@
  ****************************************************************************/
 
 
-import QtQuick          2.3
-import QtQuick.Controls 1.2
-import QtQuick.Dialogs  1.2
-import QtQuick.Layouts  1.2
+import QtQuick              2.3
+import QtQuick.Controls     1.2
+import QtQuick.Dialogs      1.2
 
 import QGroundControl               1.0
 import QGroundControl.FactSystem    1.0
@@ -26,8 +25,6 @@ SetupPage {
     pageComponent:      subFramePageComponent
 
     property bool _oldFW:   globals.activeVehicle.versionCompare(3 ,5 ,2) < 0
-    property bool _hasSensibledefaults:   globals.activeVehicle.versionCompare(4 ,1 ,0) >= 0
-
     property var frameModelSelected: undefined
 
     APMAirframeComponentController { id: controller; }
@@ -178,13 +175,7 @@ SetupPage {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: {
                                     frameModelSelected = subFrameModel.get(index)
-                                    if (_hasSensibledefaults) {
-                                        // No need to suggest loading the default parameters.
-                                        // The firmware default should be good enough.
-                                        setFrameConfig(frameModelSelected.paramValue)
-                                        return
-                                    }
-                                    confirmFrameComponent.createObject(mainWindow).open()
+                                    mainWindow.showComponentDialog(confirmFrameComponent, qsTr("Frame selection"), mainWindow.showDialogDefaultWidth, StandardButton.Close)
                                 }
                             }
                         }
@@ -197,43 +188,61 @@ SetupPage {
     Component {
         id: confirmFrameComponent
 
-        QGCPopupDialog {
-            id:         confirmFrameDialog
-            title:      qsTr("Frame selection")
-            buttons:    StandardButton.Close
+        QGCViewDialog {
+            QGCLabel {
+                id:                 applyParamsText
+                anchors.left:       parent.left
+                anchors.margins:    _margins
+                anchors.right:      parent.right
+                anchors.top:        parent.top
+                wrapMode:           Text.WordWrap
+                text: {
+                    if (frameModelSelected.paramFileName != undefined) {
+                        return qsTr("Would you like to load the default parameters for the frame ?")
+                    }
 
-            ColumnLayout {
-                QGCLabel {
-                    id:                 applyParamsText
-                    width:              firstButton.width
-                    wrapMode:           Text.WordWrap
-                    text:               frameModelSelected.paramFileName != undefined ?
-                                            qsTr("Would you like to load the default parameters for the frame?") :
-                                            qsTr("Would you like to set the desired frame?")
+                    return qsTr("Would you like to set the desired frame ?")
                 }
+            }
+
+            Flow {
+                anchors.bottom:     parent.bottom
+                anchors.left:       parent.left
+                anchors.margins:    _margins
+                anchors.right:      parent.right
+                anchors.top:        applyParamsText.bottom
+                spacing:            _margins
+                layoutDirection:    Qt.Vertical
 
                 QGCButton {
-                    id:                 firstButton
-                    Layout.fillWidth:   true
-                    text:               qsTr("Yes, Load default parameter set for %1").arg(frameModelSelected.name)
-                    visible:            frameModelSelected.paramFileName != undefined
+                    width:                  parent.width
+                    text:                   qsTr("Yes, Load default parameter set for %1").arg(frameModelSelected.name)
+                    wrapMode:               Text.WordWrap
+                    horizontalAlignment:    Text.AlignHCenter
+                    visible:                frameModelSelected.paramFileName != undefined
 
                     onClicked: {
                         setFrameConfig(frameModelSelected.paramValue)
                         loadFrameDefaultParameters(frameModelSelected.paramFileName)
-                        confirmFrameDialog.close()
+                        hideDialog()
                     }
                 }
 
                 QGCButton {
-                    Layout.fillWidth:   true
-                    text:               frameModelSelected.paramFileName != undefined ?
-                                            qsTr("No, set frame only") :
-                                            qsTr("Confirm frame %1").arg(frameModelSelected.name)
+                    width:                  parent.width
+                    wrapMode:               Text.WordWrap
+                    horizontalAlignment:    Text.AlignHCenter
+                    text: {
+                        if (frameModelSelected.paramFileName != undefined) {
+                            return qsTr("No, set frame only")
+                        }
+
+                        return qsTr("Confirm frame %1").arg(frameModelSelected.name)
+                    }
 
                     onClicked: {
                         setFrameConfig(frameModelSelected.paramValue)
-                        confirmFrameDialog.close()
+                        hideDialog()
                     }
                 }
             }

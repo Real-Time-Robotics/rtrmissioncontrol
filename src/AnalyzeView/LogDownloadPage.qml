@@ -60,7 +60,6 @@ AnalyzePage {
                     width: ScreenTools.defaultFontPixelWidth * 6
                     horizontalAlignment: Text.AlignHCenter
                     delegate : Text  {
-                        color: styleData.textColor
                         horizontalAlignment: Text.AlignHCenter
                         text: {
                             var o = logController.model.get(styleData.row)
@@ -74,7 +73,6 @@ AnalyzePage {
                     width: ScreenTools.defaultFontPixelWidth * 34
                     horizontalAlignment: Text.AlignHCenter
                     delegate: Text  {
-                        color: styleData.textColor
                         text: {
                             var o = logController.model.get(styleData.row)
                             if (o) {
@@ -84,7 +82,7 @@ AnalyzePage {
                                     if(d.getUTCFullYear() < 2010)
                                         return qsTr("Date Unknown")
                                     else
-                                        return d.toLocaleString(undefined, "short")
+                                        return d.toLocaleString()
                                 }
                             }
                             return ""
@@ -97,7 +95,6 @@ AnalyzePage {
                     width: ScreenTools.defaultFontPixelWidth * 18
                     horizontalAlignment: Text.AlignHCenter
                     delegate : Text  {
-                        color: styleData.textColor
                         horizontalAlignment: Text.AlignRight
                         text: {
                             var o = logController.model.get(styleData.row)
@@ -111,7 +108,6 @@ AnalyzePage {
                     width: ScreenTools.defaultFontPixelWidth * 22
                     horizontalAlignment: Text.AlignHCenter
                     delegate : Text  {
-                        color: styleData.textColor
                         horizontalAlignment: Text.AlignHCenter
                         text: {
                             var o = logController.model.get(styleData.row)
@@ -173,10 +169,21 @@ AnalyzePage {
                     enabled:    !logController.requestingList && !logController.downloadingLogs && logController.model.count > 0
                     text:       qsTr("Erase All")
                     width:      _butttonWidth
-                    onClicked:  mainWindow.showMessageDialog(qsTr("Delete All Log Files"),
-                                                             qsTr("All log files will be erased permanently. Is this really what you want?"),
-                                                             StandardButton.Yes | StandardButton.No,
-                                                             function() { logController.eraseAll() })
+                    onClicked:  mainWindow.showComponentDialog(
+                        eraseAllMessage,
+                        qsTr("Delete All Log Files"),
+                        mainWindow.showDialogDefaultWidth,
+                        StandardButton.Yes | StandardButton.No)
+                    Component {
+                        id: eraseAllMessage
+                        QGCViewMessage {
+                            message:    qsTr("All log files will be erased permanently. Is this really what you want?")
+                            function accept() {
+                                logController.eraseAll()
+                                hideDialog()
+                            }
+                        }
+                    }
                 }
                 QGCButton {
                     text:       qsTr("Cancel")

@@ -36,9 +36,6 @@ add_library(QmlControls
 	ToolStripAction.h
 	ToolStripActionList.cc
 	ToolStripActionList.h
-	CustomAction.h
-	CustomActionManager.h
-	CustomActionManager.cc
 )
 
 add_custom_target(QmlControlsQml

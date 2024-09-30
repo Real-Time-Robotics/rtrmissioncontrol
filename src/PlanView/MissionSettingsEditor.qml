@@ -79,7 +79,7 @@ Rectangle {
                 if (!_controllerVehicle.supportsTerrainFrame) {
                     removeModes.push(QGroundControl.AltitudeModeTerrainFrame)
                 }
-                altModeDialogComponent.createObject(mainWindow, { rgRemoveModes: removeModes, updateAltModeFn: updateFunction }).open()
+                mainWindow.showPopupDialogFromComponent(altModeDialogComponent, { rgRemoveModes: removeModes, updateAltModeFn: updateFunction })
             }
 
             RowLayout {

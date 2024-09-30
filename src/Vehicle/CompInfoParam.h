@@ -32,7 +32,7 @@ public:
     FactMetaData* factMetaDataForName(const QString& name, FactMetaData::ValueType_t type);
 
     // Overrides from CompInfo
-    void setJson(const QString& metadataJsonFileName) override;
+    void setJson(const QString& metadataJsonFileName, const QString& translationJsonFileName) override;
 
     static void _cachePX4MetaDataFile(const QString& metaDataFile);
 

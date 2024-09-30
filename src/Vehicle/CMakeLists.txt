@@ -34,16 +34,14 @@ add_library(Vehicle
 	ComponentInformationCache.h
 	ComponentInformationManager.cc
 	ComponentInformationManager.h
-	ComponentInformationTranslation.cc
-	ComponentInformationTranslation.h
 	EventHandler.cc
 	EventHandler.h
 	FTPManager.cc
 	FTPManager.h
 	GPSRTKFactGroup.cc
 	GPSRTKFactGroup.h
-	HealthAndArmingCheckReport.cc
-	HealthAndArmingCheckReport.h
+	HealthAndArmingChecks.cc
+	HealthAndArmingChecks.h
 	ImageProtocolManager.cc
 	ImageProtocolManager.h
 	InitialConnectStateMachine.cc
@@ -56,8 +54,6 @@ add_library(Vehicle
 	MultiVehicleManager.h
 	StateMachine.cc
 	StateMachine.h
-	StandardModes.cc
-	StandardModes.h
 	SysStatusSensorInfo.cc
 	SysStatusSensorInfo.h
 	TerrainFactGroup.cc
@@ -73,8 +69,6 @@ add_library(Vehicle
 	VehicleClockFactGroup.h
 	VehicleDistanceSensorFactGroup.cc
 	VehicleDistanceSensorFactGroup.h
-	VehicleEFIFactGroup.cc
-	VehicleEFIFactGroup.h
 	VehicleEscStatusFactGroup.cc
 	VehicleEscStatusFactGroup.h
 	VehicleEstimatorStatusFactGroup.cc
@@ -87,8 +81,6 @@ add_library(Vehicle
 	VehicleGPSFactGroup.h
 	VehicleGPS2FactGroup.cc
 	VehicleGPS2FactGroup.h
-	VehicleGeneratorFactGroup.cc
-	VehicleGeneratorFactGroup.h
 	Vehicle.h
 	VehicleLinkManager.cc
 	VehicleLinkManager.h
@@ -102,10 +94,8 @@ add_library(Vehicle
 	VehicleVibrationFactGroup.h
 	VehicleWindFactGroup.cc
 	VehicleWindFactGroup.h
-	VehicleHygrometerFactGroup.cc
-	VehicleHygrometerFactGroup.h
-	RemoteIDManager.h
-	RemoteIDManager.cc
+        VehicleHygrometerFactGroup.cc
+        VehicleHygrometerFactGroup.h
 
 	${EXTRA_SRC}
 )
@@ -117,7 +107,6 @@ target_link_libraries(Vehicle
 		compression
 		libevents_generated
 		libevents_parser
-		libevents_health_and_arming_checks
 	PUBLIC
 		qgc
 )

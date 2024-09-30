@@ -14,16 +14,15 @@
 
 #include <QObject>
 #include <QThread>
-#include <atomic>
 
 #include "QGCLoggingCategory.h"
 #include "Vehicle.h"
 #include "MultiVehicleManager.h"
 #include "JoystickMavCommand.h"
+#include <atomic>
 
-// JoystickLog Category declaration moved to QGCLoggingCategory.cc to allow access in Vehicle
+Q_DECLARE_LOGGING_CATEGORY(JoystickLog)
 Q_DECLARE_LOGGING_CATEGORY(JoystickValuesLog)
-Q_DECLARE_METATYPE(GRIPPER_ACTIONS)
 
 /// Action assigned to button
 class AssignedButtonAction : public QObject {
@@ -213,14 +212,11 @@ signals:
     void gimbalPitchStep            (int direction);
     void gimbalYawStep              (int direction);
     void centerGimbal               ();
-    void gimbalYawLock              (bool lock);
+    void gimbalControlValue         (double pitch, double yaw);
     void setArmed                   (bool arm);
     void setVtolInFwdFlight         (bool set);
     void setFlightMode              (const QString& flightMode);
     void emergencyStop              ();
-    void gripperAction              (GRIPPER_ACTIONS gripperAction);
-    void landingGearDeploy          ();
-    void landingGearRetract         ();
 
 protected:
     void    _setDefaultCalibration  ();
@@ -235,6 +231,11 @@ protected:
     void    _handleAxis             ();
     void    _handleButtons          ();
     void    _buildActionList        (Vehicle* activeVehicle);
+
+    void    _pitchStep              (int direction);
+    void    _yawStep                (int direction);
+    double  _localYaw       = 0.0;
+    double  _localPitch     = 0.0;
 
 private:
     virtual bool _open      ()          = 0;
@@ -350,16 +351,8 @@ private:
     static const char* _buttonActionGimbalLeft;
     static const char* _buttonActionGimbalRight;
     static const char* _buttonActionGimbalCenter;
-    static const char* _buttonActionGimbalYawLock;
-    static const char* _buttonActionGimbalYawFollow;
     static const char* _buttonActionEmergencyStop;
-    static const char* _buttonActionGripperGrab;
-    static const char* _buttonActionGripperRelease;
-    static const char* _buttonActionLandingGearDeploy;
-    static const char* _buttonActionLandingGearRetract;
 
 private slots:
     void _activeVehicleChanged(Vehicle* activeVehicle);
-    void _vehicleCountChanged(int count);
-    void _flightModesChanged();
 };

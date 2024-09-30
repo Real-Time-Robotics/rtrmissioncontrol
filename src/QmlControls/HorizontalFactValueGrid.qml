@@ -20,6 +20,10 @@ import QGroundControl.Palette       1.0
 import QGroundControl.FlightMap     1.0
 import QGroundControl               1.0
 
+// Note: This control will spit out qWarnings like this: "QGridLayoutEngine::addItem: Cell (0, 1) already taken"
+// This is due to Qt bug https://bugreports.qt.io/browse/QTBUG-65121
+// If this becomes a problem I'll implement our own grid layout control
+
 T.HorizontalFactValueGrid {
     id:                     _root
     Layout.preferredWidth:  topLayout.width
@@ -76,7 +80,7 @@ T.HorizontalFactValueGrid {
                             function recalcWidth() {
                                 var newMaxWidth = 0
                                 for (var i=0; i<valueRepeater.count; i++) {
-                                    newMaxWidth = Math.max(newMaxWidth, valueRepeater.itemAt(i).contentWidth)
+                                    newMaxWidth = Math.max(newMaxWidth, valueRepeater.itemAt(0).contentWidth)
                                 }
                                 maxWidth = Math.min(maxWidth, newMaxWidth)
                             }
@@ -122,7 +126,6 @@ T.HorizontalFactValueGrid {
                     Layout.preferredHeight: ScreenTools.minTouchPixels
                     Layout.preferredWidth:  parent.width
                     text:                   qsTr("+")
-                    enabled:                (_root.width + (2 * (_rowButtonWidth + _margins))) < screen.width
                     onClicked:              appendColumn()
                 }
 
@@ -148,7 +151,6 @@ T.HorizontalFactValueGrid {
                 Layout.fillWidth:       true
                 Layout.preferredHeight: parent.height
                 text:                   qsTr("+")
-                enabled:                (_root.height + (2 * (_rowButtonHeight + _margins))) < (screen.height - ScreenTools.toolbarHeight)
                 onClicked:              appendRow()
             }
 
@@ -179,7 +181,7 @@ T.HorizontalFactValueGrid {
             var labelOrDataItem = columnGridLayoutItem.childAt(mappedMouse.x, mappedMouse.y)
             //console.log(mappedMouse.x, mappedMouse.y, labelOrDataItem, labelOrDataItem ? labelOrDataItem.instrumentValueData : "null", labelOrDataItem && labelOrDataItem.parent ? labelOrDataItem.parent.instrumentValueData : "null")
             if (labelOrDataItem && labelOrDataItem.instrumentValueData !== undefined) {
-                valueEditDialog.createObject(mainWindow, { instrumentValueData: labelOrDataItem.instrumentValueData }).open()
+                mainWindow.showPopupDialogFromComponent(valueEditDialog, { instrumentValueData: labelOrDataItem.instrumentValueData })
             }
         }
     }

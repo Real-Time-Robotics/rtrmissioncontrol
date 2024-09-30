@@ -47,7 +47,7 @@ public:
     void setActiveJoystick(Joystick* joystick);
 
     QString activeJoystickName(void);
-    bool setActiveJoystickName(const QString& name);
+    void setActiveJoystickName(const QString& name);
 
     void restartJoystickCheckTimer(void);
 

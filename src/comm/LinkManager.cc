@@ -46,9 +46,8 @@
 QGC_LOGGING_CATEGORY(LinkManagerLog, "LinkManagerLog")
 QGC_LOGGING_CATEGORY(LinkManagerVerboseLog, "LinkManagerVerboseLog")
 
-const char* LinkManager::_defaultUDPLinkName =                  "UDP Link (AutoConnect)";
-const char* LinkManager::_mavlinkForwardingLinkName =           "MAVLink Forwarding Link";
-const char* LinkManager::_mavlinkForwardingSupportLinkName =    "MAVLink Support Forwarding Link";
+const char* LinkManager::_defaultUDPLinkName =       "UDP Link (AutoConnect)";
+const char* LinkManager::_mavlinkForwardingLinkName =       "MAVLink Forwarding Link";
 
 const int LinkManager::_autoconnectUpdateTimerMSecs =   1000;
 #ifdef Q_OS_WIN
@@ -161,9 +160,6 @@ bool LinkManager::createConnectedLink(SharedLinkConfigurationPtr& config, bool i
         _mavlinkProtocol->setVersion(_mavlinkProtocol->getCurrentVersion());
 
         if (!link->_connect()) {
-            link->_freeMavlinkChannel();
-            _rgLinks.removeAt(_rgLinks.indexOf(link));
-            config->setLink(nullptr);
             return false;
         }
 
@@ -175,21 +171,10 @@ bool LinkManager::createConnectedLink(SharedLinkConfigurationPtr& config, bool i
 
 SharedLinkInterfacePtr LinkManager::mavlinkForwardingLink()
 {
-    for (auto& link : _rgLinks) {
-        SharedLinkConfigurationPtr linkConfig = link->linkConfiguration();
+    for (int i = 0; i < _rgLinks.count(); i++) {
+        SharedLinkConfigurationPtr linkConfig = _rgLinks[i]->linkConfiguration();
         if (linkConfig->type() == LinkConfiguration::TypeUdp && linkConfig->name() == _mavlinkForwardingLinkName) {
-            return link;
-        }
-    }
-
-    return nullptr;
-}
-
-SharedLinkInterfacePtr LinkManager::mavlinkForwardingSupportLink()
-{
-    for (auto& link : _rgLinks) {
-        SharedLinkConfigurationPtr linkConfig = link->linkConfiguration();
-        if (linkConfig->type() == LinkConfiguration::TypeUdp && linkConfig->name() == _mavlinkForwardingSupportLinkName) {
+            SharedLinkInterfacePtr& link = _rgLinks[i];
             return link;
         }
     }
@@ -422,8 +407,16 @@ void LinkManager::_addMAVLinkForwardingLink(void)
         }
 
         if (!foundMAVLinkForwardingLink) {
+            qCDebug(LinkManagerLog) << "New MAVLink forwarding port added";
+
+            UDPConfiguration* udpConfig = new UDPConfiguration(_mavlinkForwardingLinkName);
+            udpConfig->setDynamic(true);
+
             QString hostName = _toolbox->settingsManager()->appSettings()->forwardMavlinkHostName()->rawValue().toString();
-            _createDynamicForwardLink(_mavlinkForwardingLinkName, hostName);
+            udpConfig->addHost(hostName);
+
+            SharedLinkConfigurationPtr config = addConfiguration(udpConfig);
+            createConnectedLink(config);
         }
     }
 }
@@ -467,7 +460,6 @@ void LinkManager::_addZeroConfAutoConnectLink(void)
         if(service.type().startsWith("_mavlink._udp")) {
             static QString udpName("ZeroConf UDP");
             if (checkIfConnectionLinkExist(LinkConfiguration::TypeUdp, udpName)) {
-                qCDebug(LinkManagerVerboseLog) << "Connection already exist";
                 return;
             }
 
@@ -483,12 +475,12 @@ void LinkManager::_addZeroConfAutoConnectLink(void)
         if(service.type().startsWith("_mavlink._tcp")) {
             static QString tcpName("ZeroConf TCP");
             if (checkIfConnectionLinkExist(LinkConfiguration::TypeTcp, tcpName)) {
-                qCDebug(LinkManagerVerboseLog) << "Connection already exist";
                 return;
             }
 
             auto link = new TCPConfiguration(tcpName);
-            link->setHost(hostname);
+            QHostAddress address(hostname);
+            link->setAddress(address);
             link->setPort(service.port());
             link->setAutoConnect(true);
             link->setDynamic(true);
@@ -713,8 +705,8 @@ void LinkManager::_updateSerialPorts()
     _commPortList.clear();
     _commPortDisplayList.clear();
 #ifndef NO_SERIAL_LINK
-    QList<QGCSerialPortInfo> portList = QGCSerialPortInfo::availablePorts();
-    for (const QGCSerialPortInfo &info: portList)
+    QList<QSerialPortInfo> portList = QSerialPortInfo::availablePorts();
+    for (const QSerialPortInfo &info: portList)
     {
         QString port = info.systemLocation().trimmed();
         _commPortList += port;
@@ -816,14 +808,6 @@ void LinkManager::removeConfiguration(LinkConfiguration* config)
     }
 }
 
-void LinkManager::createMavlinkForwardingSupportLink(void)
-{
-    QString hostName = _toolbox->settingsManager()->appSettings()->forwardMavlinkAPMSupportHostName()->rawValue().toString();
-    _createDynamicForwardLink(_mavlinkForwardingSupportLinkName, hostName);
-    _mavlinkSupportForwardingEnabled = true;
-    emit mavlinkSupportForwardingEnabledChanged();
-}
-
 void LinkManager::_removeConfiguration(LinkConfiguration* config)
 {
     _qmlConfigurations.removeOne(config);
@@ -919,17 +903,4 @@ bool LinkManager::_isSerialPortConnected(void)
     }
 #endif
     return false;
-}
-
-void LinkManager::_createDynamicForwardLink(const char* linkName, QString hostName)
-{
-    UDPConfiguration* udpConfig = new UDPConfiguration(linkName);
-    udpConfig->setDynamic(true);
-    
-    udpConfig->addHost(hostName);
-    
-    SharedLinkConfigurationPtr config = addConfiguration(udpConfig);
-    createConnectedLink(config);
-
-    qCDebug(LinkManagerLog) << "New dynamic MAVLink forwarding port added: " << linkName << " hostname: " << hostName;
 }

@@ -23,8 +23,7 @@ EventHandler::EventHandler(QObject* parent, const QString& profile, handle_event
     _sendRequestCB(sendRequestCB),
     _compid(componentId)
 {
-    auto error_cb = [componentId, this](int num_events_lost) {
-        _healthAndArmingChecks.reset();
+    auto error_cb = [componentId](int num_events_lost) {
         qCWarning(EventsLog) << "Events got lost:" << num_events_lost << "comp_id:" << componentId;
     };
 
@@ -41,12 +40,6 @@ EventHandler::EventHandler(QObject* parent, const QString& profile, handle_event
 
     _parser.formatters().url = [](const std::string& content, const std::string& link) {
         return "<a href=\""+link+"\">"+content+"</a>"; };
-
-    _parser.formatters().param = [](const std::string& content) {
-        return "<a href=\"param://"+content+"\">"+content+"</a>"; };
-
-    _parser.formatters().escape = [](const std::string& str) {
-        return QString::fromStdString(str).toHtmlEscaped().toStdString(); };
 
     events::ReceiveProtocol::Callbacks callbacks{error_cb, _sendRequestCB,
         std::bind(&EventHandler::gotEvent, this, std::placeholders::_1), timeout_cb};
@@ -82,10 +75,6 @@ void EventHandler::gotEvent(const mavlink_event_t& event)
     qCDebug(EventsLog) << "Got Event: ID:" << parsed_event->id() << "namespace:" << parsed_event->eventNamespace().c_str() <<
             "name:" << parsed_event->name().c_str() << "msg:" << parsed_event->message().c_str();
 
-    if (_healthAndArmingChecks.handleEvent(*parsed_event)) {
-        _healthAndArmingChecksValid = true;
-        emit healthAndArmingChecksUpdated();
-    }
     _handleEventCB(std::move(parsed_event));
 }
 
@@ -94,9 +83,13 @@ void EventHandler::handleEvents(const mavlink_message_t& message)
     _protocol->processMessage(message);
 }
 
-void EventHandler::setMetadata(const QString &metadataJsonFileName)
+void EventHandler::setMetadata(const QString &metadataJsonFileName, const QString &translationJsonFileName)
 {
-    if (_parser.loadDefinitionsFile(metadataJsonFileName.toStdString())) {
+    auto translate = [](const std::string& s) {
+        // TODO: use translation file
+        return s;
+    };
+    if (_parser.loadDefinitionsFile(metadataJsonFileName.toStdString(), translate)) {
         if (_parser.hasDefinitions()) {
             // do we have queued events?
             for (const auto& event : _pendingEvents) {
@@ -109,13 +102,3 @@ void EventHandler::setMetadata(const QString &metadataJsonFileName)
     }
 }
 
-int EventHandler::getModeGroup(int32_t customMode)
-{
-    events::parser::Parser::NavigationModeGroups groups = _parser.navigationModeGroups(_compid);
-    for (auto groupIter : groups.groups) {
-        if (groupIter.second.find(customMode) != groupIter.second.end()) {
-            return groupIter.first;
-        }
-    }
-    return -1;
-}

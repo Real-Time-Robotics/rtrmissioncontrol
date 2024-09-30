@@ -54,8 +54,8 @@ public:
     bool setupComplete(void) const;
 
 signals:
-    void setupCompleteChanged       (void);
-    void vehicleComponentsChanged   (void);
+    void setupCompleteChanged(bool setupComplete);
+    void vehicleComponentsChanged(void);
 
 protected:
     /// All access to AutoPilotPugin objects is through getInstanceForAutoPilotPlugin

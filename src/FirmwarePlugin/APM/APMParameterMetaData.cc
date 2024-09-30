@@ -85,12 +85,12 @@ QString APMParameterMetaData::mavTypeToString(MAV_TYPE vehicleTypeEnum)
 
     switch(vehicleTypeEnum) {
         case MAV_TYPE_FIXED_WING:
-        case MAV_TYPE_VTOL_TAILSITTER_DUOROTOR:
-        case MAV_TYPE_VTOL_TAILSITTER_QUADROTOR:
+        case MAV_TYPE_VTOL_DUOROTOR:
+        case MAV_TYPE_VTOL_QUADROTOR:
         case MAV_TYPE_VTOL_TILTROTOR:
-        case MAV_TYPE_VTOL_FIXEDROTOR:
-        case MAV_TYPE_VTOL_TAILSITTER:
-        case MAV_TYPE_VTOL_TILTWING:
+        case MAV_TYPE_VTOL_RESERVED2:
+        case MAV_TYPE_VTOL_RESERVED3:
+        case MAV_TYPE_VTOL_RESERVED4:
         case MAV_TYPE_VTOL_RESERVED5:
             vehicleName = "ArduPlane";
             break;
@@ -378,12 +378,6 @@ bool APMParameterMetaData::parseParameterAttributes(QXmlStreamReader& xml, APMFa
                 QString units = xml.readElementText();
                 qCDebug(APMParameterMetaDataVerboseLog) << "read Units: " << units;
                 rawMetaData->units = units;
-            } else if (attributeName == "ReadOnly") {
-                QString strValue = xml.readElementText().trimmed();
-                if (strValue.compare("true", Qt::CaseInsensitive) == 0) {
-                    rawMetaData->readOnly = true;
-                }
-                qCDebug(APMParameterMetaDataVerboseLog) << "read ReadOnly: " << rawMetaData->readOnly;
             } else if (attributeName == "Bitmask") {
                 bool    parseError = false;
 
@@ -467,7 +461,6 @@ FactMetaData* APMParameterMetaData::getMetaDataForFact(const QString& name, MAV_
     }
     metaData->setGroup(rawMetaData->group);
     metaData->setVehicleRebootRequired(rawMetaData->rebootRequired);
-    metaData->setReadOnly(rawMetaData->readOnly);
 
     if (!rawMetaData->shortDescription.isEmpty()) {
         metaData->setShortDescription(rawMetaData->shortDescription);

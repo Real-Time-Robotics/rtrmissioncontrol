@@ -38,6 +38,7 @@ RowLayout {
     property int    _msecs:             0
     property double _last_t:            0
     property var    _savedTuningParamValues:    [ ]
+    property bool   _showCharts: !ScreenTools.isMobile // TODO: test and enable on mobile
 
     readonly property int _tickSeparation:      5
     readonly property int _maxTickSections:     10
@@ -172,7 +173,7 @@ RowLayout {
     }
 
     QGCFlickable {
-        contentWidth:           parent.width * 0.4
+        contentWidth:           parent.width * (_showCharts ? 0.4 : 1)
         contentHeight:          rightColumn.height
         Layout.fillHeight:      true
         Layout.minimumWidth:    contentWidth
@@ -291,6 +292,8 @@ RowLayout {
     }
 
     ColumnLayout {
+        visible:            _showCharts
+
         ChartView {
             id:                 chart
             antialiasing:       true

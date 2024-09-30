@@ -101,8 +101,6 @@ void QGCPositionManager::setNmeaSourceDevice(QIODevice* device)
     }
     _nmeaSource = new QNmeaPositionInfoSource(QNmeaPositionInfoSource::RealTimeMode, this);
     _nmeaSource->setDevice(device);
-    // set equivalent range error to enable position accuracy reporting
-    _nmeaSource->setUserEquivalentRangeError(5.1);
     setPositionSource(QGCPositionManager::NmeaGPS);
 }
 
@@ -153,17 +151,6 @@ void QGCPositionManager::setPositionSource(QGCPositionManager::QGCPositionSource
     if (_currentSource != nullptr) {
         _currentSource->stopUpdates();
         disconnect(_currentSource);
-
-        // Reset all values so we dont get stuck on old values
-        _geoPositionInfo = QGeoPositionInfo();
-        _gcsPosition = QGeoCoordinate();
-        _gcsHeading =       qQNaN();
-        _gcsPositionHorizontalAccuracy = std::numeric_limits<qreal>::infinity();
-
-        emit gcsPositionChanged(_gcsPosition);
-        emit gcsHeadingChanged(_gcsHeading);
-        emit positionInfoUpdated(_geoPositionInfo);
-        emit gcsPositionHorizontalAccuracyChanged();
     }
 
     if (qgcApp()->runningUnitTests()) {
@@ -181,7 +168,7 @@ void QGCPositionManager::setPositionSource(QGCPositionManager::QGCPositionSource
         _currentSource = _nmeaSource;
         break;
     case QGCPositionManager::InternalGPS:
-    default:
+    default:        
         _currentSource = _defaultSource;
         break;
     }

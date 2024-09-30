@@ -50,8 +50,6 @@ public:
 
     QList<ActuatorGeometry>& actuators() { return _actuators; }
 
-    int numMotors() const;
-
 private:
     VehicleGeometryImageProvider();
     ~VehicleGeometryImageProvider() = default;

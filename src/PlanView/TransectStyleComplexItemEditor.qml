@@ -184,19 +184,21 @@ Rectangle {
                         Layout.fillWidth:   true
                         text:               qsTr("Delete Preset")
                         enabled:            _missionItem.presetNames.length != 0
-                        onClicked:          deletePresetDialog.createObject(mainWindow, { presetName: presetCombo.textAt(presetCombo.currentIndex) }).open()
+                        onClicked:          mainWindow.showPopupDialogFromComponent(deletePresetDialog, { presetName: presetCombo.textAt(presetCombo.currentIndex) })
 
                         Component {
                             id: deletePresetDialog
 
-                            QGCSimpleMessageDialog {
+                            QGCPopupDialog {
                                 title:      qsTr("Delete Preset")
-                                text:       qsTr("Are you sure you want to delete '%1' preset?").arg(presetName)
                                 buttons:    StandardButton.Yes | StandardButton.No
 
-                                property string presetName
+                                QGCLabel { text: qsTr("Are you sure you want to delete '%1' preset?").arg(dialogProperties.presetName) }
 
-                                onAccepted: { _missionItem.deletePreset(presetName) }
+                                function accept() {
+                                    _missionItem.deletePreset(dialogProperties.presetName)
+                                    hideDialog()
+                                }
                             }
                         }
                     }
@@ -208,7 +210,7 @@ Rectangle {
                     Layout.alignment:   Qt.AlignCenter
                     Layout.fillWidth:   true
                     text:               qsTr("Save Settings As New Preset")
-                    onClicked:          savePresetDialog.createObject(mainWindow).open()
+                    onClicked:          mainWindow.showPopupDialogFromComponent(savePresetDialog)
                 }
 
                 SectionHeader {
@@ -247,11 +249,10 @@ Rectangle {
                 title:      qsTr("Save Preset")
                 buttons:    StandardButton.Save | StandardButton.Cancel
 
-                onAccepted: {
+                function accept() {
                     if (presetNameField.text != "") {
                         _missionItem.savePreset(presetNameField.text.trim())
-                    } else {
-                        preventClose = true
+                        hideDialog()
                     }
                 }
 
@@ -280,13 +281,13 @@ Rectangle {
                         function validateText(text) {
                             if (text.trim() === "") {
                                 nameError.text = qsTr("Preset name cannot be blank.")
-                                popupDialog.acceptButtonEnabled = false
+                                popupDialog.disableAcceptButton()
                             } else if (text.includes("/")) {
                                 nameError.text = qsTr("Preset name cannot include the \"/\" character.")
-                                popupDialog.acceptButtonEnabled = false
+                                popupDialog.disableAcceptButton()
                             } else {
                                 nameError.text = ""
-                                popupDialog.acceptButtonEnabled = true
+                                popupDialog.enableAcceptButton()
                             }
                         }
                     }

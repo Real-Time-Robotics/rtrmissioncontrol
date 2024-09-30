@@ -20,12 +20,15 @@ import QGroundControl.FactControls  1.0
 import QGroundControl.Controllers   1.0
 
 QGCPopupDialog {
+    property alias tuningFact: controller.tuningFact
+
     title:      qsTr("RC To Param")
     buttons:    StandardButton.Cancel | StandardButton.Ok
 
-    property alias tuningFact: controller.tuningFact
-
-    onAccepted: QGroundControl.multiVehicleManager.activeVehicle.sendParamMapRC(tuningFact.name, scale.text, centerValue.text, tuningID.currentIndex, minValue.text, maxValue.text)
+    function accept() {
+        QGroundControl.multiVehicleManager.activeVehicle.sendParamMapRC(tuningFact.name, scale.text, centerValue.text, tuningID.currentIndex, minValue.text, maxValue.text);
+        hideDialog()
+    }
 
     RCToParamDialogController {
         id: controller

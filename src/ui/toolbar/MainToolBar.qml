@@ -33,12 +33,6 @@ Rectangle {
     property bool   _communicationLost: _activeVehicle ? _activeVehicle.vehicleLinkManager.communicationLost : false
     property color  _mainStatusBGColor: qgcPal.brandingPurple
 
-    function dropMessageIndicatorTool() {
-        if (currentToolbar === flyViewToolbar) {
-            indicatorLoader.item.dropMessageIndicatorTool();
-        }
-    }
-
     QGCPalette { id: qgcPal }
 
     /// Bottom single pixel divider

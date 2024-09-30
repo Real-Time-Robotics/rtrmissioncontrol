@@ -17,7 +17,7 @@
 MotorAssignment::MotorAssignment(QObject* parent, Vehicle* vehicle, QmlObjectListModel* actuators)
         : QObject(parent), _vehicle(vehicle), _actuators(actuators)
 {
-    _spinTimer.setInterval(_spinTimeoutDefaultSec);
+    _spinTimer.setInterval(1000);
     _spinTimer.setSingleShot(true);
     connect(&_spinTimer, &QTimer::timeout, this, &MotorAssignment::spinTimeout);
 }
@@ -141,7 +141,6 @@ void MotorAssignment::start()
     }
     _state = State::Running;
     emit activeChanged();
-    _spinTimer.setInterval(_assignMotors ? _spinTimeoutHighSec : _spinTimeoutDefaultSec);
     _spinTimer.start();
 }
 
@@ -170,7 +169,6 @@ void MotorAssignment::selectMotor(int motorIndex)
         emit activeChanged();
     } else {
         // spin the next motor after some time
-        _spinTimer.setInterval(_spinTimeoutDefaultSec);
         _spinTimer.start();
     }
 }
@@ -197,10 +195,11 @@ void MotorAssignment::spinTimeout()
     spinCurrentMotor();
 }
 
-void MotorAssignment::ackHandlerEntry(void* resultHandlerData, int /*compId*/, const mavlink_command_ack_t& ack, Vehicle::MavCmdResultFailureCode_t failureCode)
+void MotorAssignment::ackHandlerEntry(void* resultHandlerData, int compId, MAV_RESULT commandResult, uint8_t progress,
+        Vehicle::MavCmdResultFailureCode_t failureCode)
 {
     MotorAssignment* motorAssignment = (MotorAssignment*)resultHandlerData;
-    motorAssignment->ackHandler(static_cast<MAV_RESULT>(ack.result), failureCode);
+    motorAssignment->ackHandler(commandResult, failureCode);
 }
 
 void MotorAssignment::ackHandler(MAV_RESULT commandResult, Vehicle::MavCmdResultFailureCode_t failureCode)
@@ -216,12 +215,9 @@ void MotorAssignment::sendMavlinkRequest(int function, float value)
 {
     qCDebug(ActuatorsConfigLog) << "Sending actuator test function:" << function << "value:" << value;
 
-    Vehicle::MavCmdAckHandlerInfo_t handlerInfo = {};
-    handlerInfo.resultHandler       = ackHandlerEntry;
-    handlerInfo.resultHandlerData   = this;
-
     _vehicle->sendMavCommandWithHandler(
-            &handlerInfo,
+            ackHandlerEntry,                  // Ack callback
+            this,                             // Ack callback data
             MAV_COMP_ID_AUTOPILOT1,           // the ID of the autopilot
             MAV_CMD_ACTUATOR_TEST,            // the mavlink command
             value,                            // value

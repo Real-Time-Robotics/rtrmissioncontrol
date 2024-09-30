@@ -129,6 +129,9 @@ private slots:
     void _sendGeoFenceComplete      (void);
     void _sendRallyPointsComplete   (void);
     void _updatePlanCreatorsList    (void);
+#if defined(QGC_AIRMAP_ENABLED)
+    void _startFlightPlanning       (void);
+#endif
 
 private:
     void _commonInit                (void);

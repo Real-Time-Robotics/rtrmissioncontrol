@@ -16,8 +16,8 @@ CompInfoEvents::CompInfoEvents(uint8_t compId, Vehicle* vehicle, QObject* parent
 
 }
 
-void CompInfoEvents::setJson(const QString& metadataJsonFileName)
+void CompInfoEvents::setJson(const QString& metadataJsonFileName, const QString& translationJsonFileName)
 {
-    vehicle->setEventsMetadata(compId, metadataJsonFileName);
+    vehicle->setEventsMetadata(compId, metadataJsonFileName, translationJsonFileName);
 }
 

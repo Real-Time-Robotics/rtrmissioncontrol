@@ -1,4 +1,5 @@
 /******************************************************************************
+ * $Id: shptreedump.c,v 1.9 2016-12-05 12:44:06 erouault Exp $
  *
  * Project:  Shapelib
  * Purpose:  Mainline for creating and dumping an ASCII representation of
@@ -13,7 +14,7 @@
  * option is discussed in more detail in shapelib.html.
  *
  * --
- *
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -33,18 +34,46 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************
  *
+ * $Log: shptreedump.c,v $
+ * Revision 1.9  2016-12-05 12:44:06  erouault
+ * * Major overhaul of Makefile build system to use autoconf/automake.
+ *
+ * * Warning fixes in contrib/
+ *
+ * Revision 1.8  2005-01-03 22:30:13  fwarmerdam
+ * added support for saved quadtrees
+ *
+ * Revision 1.7  2002/04/10 16:59:12  warmerda
+ * fixed email
+ *
+ * Revision 1.6  1999/11/05 14:12:05  warmerda
+ * updated license terms
+ *
+ * Revision 1.5  1999/06/02 18:24:21  warmerda
+ * added trimming code
+ *
+ * Revision 1.4  1999/06/02 17:56:12  warmerda
+ * added quad'' subnode support for trees
+ *
+ * Revision 1.3  1999/05/18 19:13:13  warmerda
+ * Use fabs() instead of abs().
+ *
+ * Revision 1.2  1999/05/18 19:11:11  warmerda
+ * Added example searching capability
+ *
+ * Revision 1.1  1999/05/18 17:49:20  warmerda
+ * New
+ *
  */
 
 #include "shapefil.h"
 
 #include <assert.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 
-SHP_CVSID("$Id$")
+SHP_CVSID("$Id: shptreedump.c,v 1.9 2016-12-05 12:44:06 erouault Exp $")
 
 static void SHPTreeNodeDump( SHPTree *, SHPTreeNode *, const char *, int );
 static void SHPTreeNodeSearchAndDump( SHPTree *, double *, double * );
@@ -70,11 +99,12 @@ static void Usage()
 int main( int argc, char ** argv )
 
 {
-    int nExpandShapes = 0;
-    int nMaxDepth = 0;
-    bool bDoSearch = false;
-    double adfSearchMin[4];
-    double adfSearchMax[4];
+    SHPHandle	hSHP;
+    SHPTree	*psTree;
+    int		nExpandShapes = 0;
+    int		nMaxDepth = 0;
+    int		bDoSearch = 0;
+    double	adfSearchMin[4], adfSearchMax[4];
     const char *pszOutputIndexFilename = NULL;
     const char *pszInputIndexFilename = NULL;
     const char *pszTargetFile = NULL;
@@ -110,7 +140,7 @@ int main( int argc, char ** argv )
         }
         else if( strcmp(argv[1],"-search") == 0 && argc > 5 )
         {
-            bDoSearch = true;
+            bDoSearch = 1;
 
             adfSearchMin[0] = atof(argv[2]);
             adfSearchMin[1] = atof(argv[3]);
@@ -126,11 +156,11 @@ int main( int argc, char ** argv )
                 printf( "Min greater than max in search criteria.\n" );
                 Usage();
             }
-
+            
             argv += 5;
             argc -= 5;
         }
-        else if( pszTargetFile == NULL )
+        else if( pszTargetFile == NULL )				
         {
             pszTargetFile = argv[1];
             argv++;
@@ -149,6 +179,7 @@ int main( int argc, char ** argv )
     if( bDoSearch && pszInputIndexFilename != NULL )
     {
         FILE *fp = fopen( pszInputIndexFilename, "rb" );
+        int  *panResult, nResultCount = 0, iResult;
 
         if( fp == NULL )
         {
@@ -156,18 +187,17 @@ int main( int argc, char ** argv )
             exit( 1 );
         }
 
-        int nResultCount = 0;
-        int *panResult = SHPSearchDiskTree( fp, adfSearchMin, adfSearchMax,
+        panResult = SHPSearchDiskTree( fp, adfSearchMin, adfSearchMax, 
                                        &nResultCount );
 
         printf( "Result: " );
-        for( int iResult = 0; iResult < nResultCount; iResult++ )
+        for( iResult = 0; iResult < nResultCount; iResult++ )
             printf( "%d ", panResult[iResult] );
         printf( "\n" );
         free( panResult );
 
         fclose( fp );
-
+        
         exit( 0 );
     }
 
@@ -182,7 +212,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Open the passed shapefile.                                      */
 /* -------------------------------------------------------------------- */
-    SHPHandle hSHP = SHPOpen( pszTargetFile, "rb" );
+    hSHP = SHPOpen( pszTargetFile, "rb" );
 
     if( hSHP == NULL )
     {
@@ -193,7 +223,7 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
 /*      Build a quadtree structure for this file.                       */
 /* -------------------------------------------------------------------- */
-    SHPTree *psTree = SHPCreateTree( hSHP, 2, nMaxDepth, NULL, NULL );
+    psTree = SHPCreateTree( hSHP, 2, nMaxDepth, NULL, NULL );
 
 /* -------------------------------------------------------------------- */
 /*      Trim unused nodes from the tree.                                */
@@ -242,7 +272,7 @@ static void EmitCoordinate( double * padfCoord, int nDimension )
 
 {
     const char	*pszFormat;
-
+    
     if( fabs(padfCoord[0]) < 180 && fabs(padfCoord[1]) < 180 )
         pszFormat = "%.9f";
     else
@@ -272,28 +302,30 @@ static void EmitShape( SHPObject * psObject, const char * pszPrefix,
                        int nDimension )
 
 {
+    int		i;
+    
     printf( "%s( Shape\n", pszPrefix );
     printf( "%s  ShapeId = %d\n", pszPrefix, psObject->nShapeId );
 
     printf( "%s  Min = (", pszPrefix );
     EmitCoordinate( &(psObject->dfXMin), nDimension );
     printf( ")\n" );
-
+    
     printf( "%s  Max = (", pszPrefix );
     EmitCoordinate( &(psObject->dfXMax), nDimension );
     printf( ")\n" );
 
-    for( int i = 0; i < psObject->nVertices; i++ )
+    for( i = 0; i < psObject->nVertices; i++ )
     {
         double	adfVertex[4];
-
+        
         printf( "%s  Vertex[%d] = (", pszPrefix, i );
 
         adfVertex[0] = psObject->padfX[i];
         adfVertex[1] = psObject->padfY[i];
         adfVertex[2] = psObject->padfZ[i];
         adfVertex[3] = psObject->padfM[i];
-
+        
         EmitCoordinate( adfVertex, nDimension );
         printf( ")\n" );
     }
@@ -313,6 +345,7 @@ static void SHPTreeNodeDump( SHPTree * psTree,
 
 {
     char	szNextPrefix[150];
+    int		i;
 
     strcpy( szNextPrefix, pszPrefix );
     if( strlen(pszPrefix) < sizeof(szNextPrefix) - 3 )
@@ -326,7 +359,7 @@ static void SHPTreeNodeDump( SHPTree * psTree,
     printf( "%s  Min = (", pszPrefix );
     EmitCoordinate( psTreeNode->adfBoundsMin, psTree->nDimension );
     printf( ")\n" );
-
+    
     printf( "%s  Max = (", pszPrefix );
     EmitCoordinate( psTreeNode->adfBoundsMax, psTree->nDimension );
     printf( ")\n" );
@@ -337,7 +370,7 @@ static void SHPTreeNodeDump( SHPTree * psTree,
     if( nExpandShapes )
     {
         printf( "%s  Shapes(%d):\n", pszPrefix, psTreeNode->nShapeCount );
-        for( int i = 0; i < psTreeNode->nShapeCount; i++ )
+        for( i = 0; i < psTreeNode->nShapeCount; i++ )
         {
             SHPObject	*psObject;
 
@@ -355,7 +388,7 @@ static void SHPTreeNodeDump( SHPTree * psTree,
     else
     {
         printf( "%s  Shapes(%d): ", pszPrefix, psTreeNode->nShapeCount );
-        for( int i = 0; i < psTreeNode->nShapeCount; i++ )
+        for( i = 0; i < psTreeNode->nShapeCount; i++ )
         {
             printf( "%d ", psTreeNode->panShapeIds[i] );
         }
@@ -365,13 +398,13 @@ static void SHPTreeNodeDump( SHPTree * psTree,
 /* -------------------------------------------------------------------- */
 /*      Emit subnodes.                                                  */
 /* -------------------------------------------------------------------- */
-    for( int i = 0; i < psTreeNode->nSubNodes; i++ )
+    for( i = 0; i < psTreeNode->nSubNodes; i++ )
     {
         if( psTreeNode->apsSubNode[i] != NULL )
             SHPTreeNodeDump( psTree, psTreeNode->apsSubNode[i],
                              szNextPrefix, nExpandShapes );
     }
-
+    
     printf( "%s)\n", pszPrefix );
 
     return;
@@ -386,13 +419,14 @@ static void SHPTreeNodeSearchAndDump( SHPTree * hTree,
                                       double *padfBoundsMax )
 
 {
+    int		*panHits, nShapeCount, i;
+
 /* -------------------------------------------------------------------- */
 /*      Perform the search for likely candidates.  These are shapes     */
 /*      that fall into a tree node whose bounding box intersects our    */
 /*      area of interest.                                               */
 /* -------------------------------------------------------------------- */
-    int nShapeCount;
-    int *panHits = SHPTreeFindLikelyShapes( hTree, padfBoundsMin, padfBoundsMax,
+    panHits = SHPTreeFindLikelyShapes( hTree, padfBoundsMin, padfBoundsMax,
                                        &nShapeCount );
 
 /* -------------------------------------------------------------------- */
@@ -402,12 +436,14 @@ static void SHPTreeNodeSearchAndDump( SHPTree * hTree,
 /*      and the shape itself still not cross it but we don't try to     */
 /*      address that here.                                              */
 /* -------------------------------------------------------------------- */
-    for( int i = 0; i < nShapeCount; i++ )
+    for( i = 0; i < nShapeCount; i++ )
     {
-        SHPObject *psObject = SHPReadObject( hTree->hSHP, panHits[i] );
+        SHPObject	*psObject;
+
+        psObject = SHPReadObject( hTree->hSHP, panHits[i] );
         if( psObject == NULL )
             continue;
-
+        
         if( !SHPCheckBoundsOverlap( padfBoundsMin, padfBoundsMax,
                                     &(psObject->dfXMin),
                                     &(psObject->dfXMax),

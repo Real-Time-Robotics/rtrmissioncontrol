@@ -33,7 +33,6 @@ if(BUILD_TESTING)
 	add_subdirectory(qgcunittest)
 
 	add_qgc_test(ComponentInformationCacheTest)
-	add_qgc_test(ComponentInformationTranslationTest)
 	add_qgc_test(CameraCalcTest)
 	add_qgc_test(CameraSectionTest)
 	add_qgc_test(CorridorScanComplexItemTest)
@@ -85,8 +84,6 @@ add_library(qgc
 	QGC.h
 	QGCApplication.cc
 	QGCApplication.h
-	QGCCachedFileDownload.cc
-	QGCCachedFileDownload.h
 	QGCComboBox.cc
 	QGCComboBox.h
 	QGCConfig.h
@@ -115,11 +112,12 @@ add_library(qgc
 	TerrainTile.h
 )
 
-set_source_files_properties(QGCApplication.cc PROPERTIES COMPILE_DEFINITIONS APP_VERSION_STR="${APP_VERSION_STR}")
+set_source_files_properties(QGCApplication.cc PROPERTIES COMPILE_DEFINITIONS GIT_VERSION="${GIT_VERSION}")
 
 add_subdirectory(ui)
 
 add_subdirectory(ADSB)
+add_subdirectory(Airmap)
 add_subdirectory(AnalyzeView)
 add_subdirectory(api)
 add_subdirectory(Audio)
@@ -164,13 +162,13 @@ target_link_libraries(qgc
 		Qt5::Widgets
 
 		ADSB
+		Airmap
 		AnalyzeView
 		api
 		Audio
 		AutoPilotPlugins
 		Camera
 		comm
-		compression
 		FactSystem
 		FirmwarePlugin
 		FlightMap

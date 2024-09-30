@@ -34,8 +34,8 @@ Item {
             _switchTHList.push("RC_TRANS_TH")
         }
         if (controller.vehicle.fixedWing) {
-            _switchNameList.push("RC_MAP_FLAPS")
-            _switchTHList.push("")
+            _switchFactList.push("RC_MAP_FLAPS")
+            _switchTHFactList.push("")
         }
         switchRepeater.model = _switchNameList
     }
@@ -184,6 +184,14 @@ Item {
                     }
                 } // Column - Switch settings
             } // Row - Settings
+
+            QGCButton {
+                text: qsTr("Use Multi Channel Mode Selection")
+                onClicked: {
+                    controller.getParameterFact(-1, "RC_MAP_MODE_SW").value = 5
+                    controller.getParameterFact(-1, "RC_MAP_FLTMODE").value = 0
+                }
+            }
         }
     }
 }

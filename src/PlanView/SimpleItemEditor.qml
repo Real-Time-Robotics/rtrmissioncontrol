@@ -145,7 +145,7 @@ Rectangle {
                                 removeModes.push(QGroundControl.AltitudeModeAbsolute)
                             }
                             removeModes.push(QGroundControl.AltitudeModeMixed)
-                            altModeDialogComponent.createObject(mainWindow, { rgRemoveModes: removeModes, updateAltModeFn: updateFunction }).open()
+                            mainWindow.showPopupDialogFromComponent(altModeDialogComponent, { rgRemoveModes: removeModes, updateAltModeFn: updateFunction })
                         }
                     }
 

@@ -62,5 +62,5 @@ QUrl APMCameraComponent::setupSource(void) const
 
 QUrl APMCameraComponent::summaryQmlSource(void) const
 {
-    return QUrl();
+    return QUrl::fromUserInput(QStringLiteral("qrc:/qml/APMCameraComponentSummary.qml"));
 }

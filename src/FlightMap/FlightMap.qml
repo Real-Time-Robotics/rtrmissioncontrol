@@ -66,13 +66,12 @@ Map {
     }
 
     function centerToSpecifiedLocation() {
-        specifyMapPositionDialog.createObject(mainWindow).open()
+        mainWindow.showComponentDialog(specifyMapPositionDialog, qsTr("Specify Position"), mainWindow.showDialogDefaultWidth, StandardButton.Close)
     }
 
     Component {
         id: specifyMapPositionDialog
         EditPositionDialog {
-            title:                  qsTr("Specify Position")
             coordinate:             center
             onCoordinateChanged:    center = coordinate
         }
@@ -103,11 +102,9 @@ Map {
 
     on_ActiveVehicleCoordinateChanged: _possiblyCenterToVehiclePosition()
 
-    onMapReadyChanged: {
-        if (_map.mapReady) {
-            updateActiveMapType()
-            _possiblyCenterToVehiclePosition()
-        }
+    Component.onCompleted: {
+        updateActiveMapType()
+        _possiblyCenterToVehiclePosition()
     }
 
     Connections {

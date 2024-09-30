@@ -175,15 +175,14 @@ QString JoystickManager::activeJoystickName(void)
     return _activeJoystick ? _activeJoystick->name() : QString();
 }
 
-bool JoystickManager::setActiveJoystickName(const QString& name)
+void JoystickManager::setActiveJoystickName(const QString& name)
 {
-    if (_name2JoystickMap.contains(name)) {
-        setActiveJoystick(_name2JoystickMap[name]);
-        return true;
-    } else {
+    if (!_name2JoystickMap.contains(name)) {
         qCWarning(JoystickManagerLog) << "Set active not in map" << name;
-        return false;
+        return;
     }
+
+    setActiveJoystick(_name2JoystickMap[name]);
 }
 
 /*

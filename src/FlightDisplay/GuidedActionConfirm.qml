@@ -17,15 +17,15 @@ import QGroundControl.Controls      1.0
 import QGroundControl.Palette       1.0
 
 Rectangle {
-    id:         _root
-    width:      ScreenTools.defaultFontPixelWidth * 45
-    height:     mainLayout.height + (_margins * 2)
-    radius:     ScreenTools.defaultFontPixelWidth / 2
-    color:      qgcPal.window
-    visible:    false
+    id:                     _root
+    Layout.minimumWidth:    mainLayout.width + (_margins * 2)
+    Layout.preferredHeight: mainLayout.height + (_margins * 2)
+    radius:                 ScreenTools.defaultFontPixelWidth / 2
+    color:                  qgcPal.windowShadeLight
+    visible:                false
 
     property var    guidedController
-    property var    guidedValueSlider
+    property var    altitudeSlider
     property string title                                       // Currently unused
     property alias  message:            messageText.text
     property int    action
@@ -39,12 +39,6 @@ Rectangle {
     property bool _emergencyAction: action === guidedController.actionEmergencyStop
 
     Component.onCompleted: guidedController.confirmDialog = this
-
-    onVisibleChanged: {
-        if (visible) {
-            slider.focus = true
-        }
-    }
 
     onHideTriggerChanged: {
         if (hideTrigger) {
@@ -63,7 +57,7 @@ Rectangle {
     }
 
     function confirmCancelled() {
-        guidedValueSlider.visible = false
+        altitudeSlider.visible = false
         visible = false
         hideTrigger = false
         visibleTimer.stop()
@@ -83,18 +77,15 @@ Rectangle {
     QGCPalette { id: qgcPal }
 
     ColumnLayout {
-        id:                 mainLayout
-        anchors.margins:    _margins
-        anchors.left:       parent.left
-        anchors.right:      parent.right
-        spacing:            _margins
+        id:                         mainLayout
+        anchors.horizontalCenter:   parent.horizontalCenter
+        spacing:                    _margins
 
         QGCLabel {
             id:                     messageText
             Layout.fillWidth:       true
             horizontalAlignment:    Text.AlignHCenter
             wrapMode:               Text.WordWrap
-            font.pointSize:         ScreenTools.mediumFontPointSize
         }
 
         QGCCheckBox {
@@ -105,23 +96,23 @@ Rectangle {
         }
 
         RowLayout {
-            Layout.fillWidth:   true
-            spacing:            ScreenTools.defaultFontPixelWidth
+            Layout.alignment:       Qt.AlignHCenter
+            spacing:                ScreenTools.defaultFontPixelWidth
 
             SliderSwitch {
-                id:                 slider
-                confirmText:        ScreenTools.isMobile ? qsTr("Slide to confirm") : qsTr("Slide or hold spacebar")
-                Layout.fillWidth:   true
+                id:                     slider
+                confirmText:            qsTr("Slide to confirm")
+                Layout.minimumWidth:    Math.max(implicitWidth, ScreenTools.defaultFontPixelWidth * 30)
 
                 onAccept: {
                     _root.visible = false
-                    var sliderOutputValue = 0
-                    if (guidedValueSlider.visible) {
-                        sliderOutputValue = guidedValueSlider.getOutputValue()
-                        guidedValueSlider.visible = false
+                    var altitudeChange = 0
+                    if (altitudeSlider.visible) {
+                        altitudeChange = altitudeSlider.getAltitudeChangeValue()
+                        altitudeSlider.visible = false
                     }
                     hideTrigger = false
-                    guidedController.executeAction(_root.action, _root.actionData, sliderOutputValue, _root.optionChecked)
+                    guidedController.executeAction(_root.action, _root.actionData, altitudeChange, _root.optionChecked)
                     if (mapIndicator) {
                         mapIndicator.actionConfirmed()
                         mapIndicator = undefined

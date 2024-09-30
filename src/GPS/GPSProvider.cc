@@ -228,10 +228,6 @@ int GPSProvider::callback(GPSCallbackType type, void *data1, int data2)
         case GPSCallbackType::setClock:
             /* do nothing */
             break;
-
-        case GPSCallbackType::gotRelativePositionMessage:
-            /* do nothing */
-            break;
     }
 
     return 0;

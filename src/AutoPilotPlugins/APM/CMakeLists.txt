@@ -14,7 +14,6 @@ SOURCES
     APMPowerComponent.qml
     APMPowerComponentSummary.qml
     APMRadioComponentSummary.qml
-    APMRemoteSupportComponent.qml
     APMSafetyComponent.qml
     APMSafetyComponentCopter.qml
     APMSafetyComponentPlane.qml

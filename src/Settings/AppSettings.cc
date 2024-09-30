@@ -12,10 +12,6 @@
 #include "QGCApplication.h"
 #include "ParameterManager.h"
 
-#ifdef __android__
-#include "AndroidInterface.h"
-#endif
-
 #include <QQmlEngine>
 #include <QtQml>
 #include <QStandardPaths>
@@ -30,7 +26,6 @@ const char* AppSettings::telemetryFileExtension =   "tlog";
 const char* AppSettings::kmlFileExtension =         "kml";
 const char* AppSettings::shpFileExtension =         "shp";
 const char* AppSettings::logFileExtension =         "ulg";
-const char* AppSettings::tilesetFileExtension =     "qgctiledb";
 
 const char* AppSettings::parameterDirectory =       QT_TRANSLATE_NOOP("AppSettings", "Parameters");
 const char* AppSettings::telemetryDirectory =       QT_TRANSLATE_NOOP("AppSettings", "Telemetry");
@@ -39,7 +34,6 @@ const char* AppSettings::logDirectory =             QT_TRANSLATE_NOOP("AppSettin
 const char* AppSettings::videoDirectory =           QT_TRANSLATE_NOOP("AppSettings", "Video");
 const char* AppSettings::photoDirectory =           QT_TRANSLATE_NOOP("AppSettings", "Photo");
 const char* AppSettings::crashDirectory =           QT_TRANSLATE_NOOP("AppSettings", "CrashLogs");
-const char* AppSettings::customActionsDirectory =   QT_TRANSLATE_NOOP("AppSettings", "CustomActions");
 
 // Release languages are 90%+ complete
 QList<int> AppSettings::_rgReleaseLanguages = {
@@ -100,26 +94,10 @@ DECLARE_SETTINGGROUP(App, "")
         QDir rootDir = QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
         savePathFact->setRawValue(rootDir.absolutePath());
     #else
-        QString rootDirPath;
-        #ifdef __android__
-        if (androidSaveToSDCard()->rawValue().toBool()) {
-                rootDirPath = AndroidInterface::getSDCardPath();
-            qDebug() << "AndroidInterface::getSDCardPath();" << rootDirPath;
-                if (rootDirPath.isEmpty() || !QDir(rootDirPath).exists()) {
-                    rootDirPath.clear();
-                    qgcApp()->showAppMessage(tr("Save to SD card specified for application data. But no SD card present. Using internal storage."));
-                } else if (!QFileInfo(rootDirPath).isWritable()) {
-                    rootDirPath.clear();
-                    qgcApp()->showAppMessage(tr("Save to SD card specified for application data. But SD card is write protected. Using internal storage."));
-                }
-            }
-        #endif
-        if (rootDirPath.isEmpty()) {
-            rootDirPath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
-        }
-        savePathFact->setRawValue(QDir(rootDirPath).filePath(appName));
+        QDir rootDir = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation));
+        savePathFact->setRawValue(rootDir.filePath(appName));
     #endif
-    savePathFact->setVisible(false);
+        savePathFact->setVisible(false);
 #else
         QDir rootDir = QDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
         savePathFact->setRawValue(rootDir.filePath(appName));
@@ -149,7 +127,6 @@ DECLARE_SETTINGSFACT(AppSettings, virtualJoystickAutoCenterThrottle)
 DECLARE_SETTINGSFACT(AppSettings, appFontPointSize)
 DECLARE_SETTINGSFACT(AppSettings, showLargeCompass)
 DECLARE_SETTINGSFACT(AppSettings, savePath)
-DECLARE_SETTINGSFACT(AppSettings, androidSaveToSDCard)
 DECLARE_SETTINGSFACT(AppSettings, useChecklist)
 DECLARE_SETTINGSFACT(AppSettings, enforceChecklist)
 DECLARE_SETTINGSFACT(AppSettings, mapboxToken)
@@ -171,7 +148,6 @@ DECLARE_SETTINGSFACT(AppSettings, saveCsvTelemetry)
 DECLARE_SETTINGSFACT(AppSettings, firstRunPromptIdsShown)
 DECLARE_SETTINGSFACT(AppSettings, forwardMavlink)
 DECLARE_SETTINGSFACT(AppSettings, forwardMavlinkHostName)
-DECLARE_SETTINGSFACT(AppSettings, forwardMavlinkAPMSupportHostName)
 
 DECLARE_SETTINGSFACT_NO_FUNC(AppSettings, indoorPalette)
 {
@@ -241,7 +217,6 @@ void AppSettings::_checkSavePathDirectories(void)
         savePathDir.mkdir(videoDirectory);
         savePathDir.mkdir(photoDirectory);
         savePathDir.mkdir(crashDirectory);
-        savePathDir.mkdir(customActionsDirectory);
     }
 }
 
@@ -320,16 +295,6 @@ QString AppSettings::crashSavePath(void)
     return QString();
 }
 
-QString AppSettings::customActionsSavePath(void)
-{
-    QString path = savePath()->rawValue().toString();
-    if (!path.isEmpty() && QDir(path).exists()) {
-        QDir dir(path);
-        return dir.filePath(customActionsDirectory);
-    }
-    return QString();
-}
-
 QList<int> AppSettings::firstRunPromptsIdsVariantToList(const QVariant& firstRunPromptIds)
 {
     QList<int> rgIds;
@@ -370,7 +335,7 @@ QLocale::Language AppSettings::_qLocaleLanguageID(void)
         // We need to convert to the new settings key/values
 #if 0
         // Old vales
-        "enumStrings":      "System,български (Bulgarian),中文 (Chinese),Nederlands (Dutch),English,Suomi (Finnish),Français (French),Deutsche (German),Ελληνικά (Greek), עברית (Hebrew),Italiano (Italian),日本語 (Japanese),한국어 (Korean),Norsk (Norwegian),Polskie (Polish),Português (Portuguese),Pусский (Russian),Español (Spanish),Svenska (Swedish),Türk (Turkish),Azerbaijani (Azerbaijani)",
+        "enumStrings":      "System,български (Bulgarian),中文 (Chinese),Nederlands (Dutch),English,Suomi (Finnish),Français (French),Deutsche (German),Ελληνικά (Greek), עברית (Hebrew),Italiano (Italian),日本人 (Japanese),한국어 (Korean),Norsk (Norwegian),Polskie (Polish),Português (Portuguese),Pусский (Russian),Español (Spanish),Svenska (Swedish),Türk (Turkish),Azerbaijani (Azerbaijani)",
         "enumValues":       "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20",
 #endif
         static QList<int> rgNewValues = { 0,20,25,30,31,36,37,42,43,48,58,59,66,85,90,91,96,111,114,125,15 };

@@ -18,6 +18,3 @@ add_library(Actuators
 	MotorAssignment.h
 )
 
-target_link_libraries(Actuators PRIVATE
-	qgc)
-

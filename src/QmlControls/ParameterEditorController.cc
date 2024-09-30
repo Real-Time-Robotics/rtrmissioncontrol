@@ -155,7 +155,7 @@ void ParameterEditorController::_factAdded(int compId, Fact* fact)
         QmlObjectListModel& groups = category->groups;
         inserted = false;
         for (int i=0; i<groups.count(); i++) {
-            if (groups.value<ParameterEditorGroup*>(i)->name > group->name) {
+            if (groups.value<ParameterEditorCategory*>(i)->name > group->name) {
                 groups.insert(i, group);
                 inserted = true;
                 break;
@@ -278,7 +278,6 @@ bool ParameterEditorController::buildDiffFromFile(const QString& filename)
                 QString     units;
                 QVariant    fileValueVar    = fileValueStr;
                 bool        noVehicleValue   = false;
-                bool        readOnly         = false;
 
                 if (_vehicle->id() != vehicleId) {
                     _diffOtherVehicle = true;
@@ -300,7 +299,6 @@ bool ParameterEditorController::buildDiffFromFile(const QString& filename)
                     fileFact->setMetaData(vehicleFact->metaData());
                     fileFact->setRawValue(fileValueStr);
                     vehicleFactMetaData->setVehicleRebootRequired(vehicleRebootRequired);
-                    readOnly = vehicleFact->readOnly();
 
                     if (vehicleFact->rawValue() == fileFact->rawValue()) {
                         continue;
@@ -313,20 +311,18 @@ bool ParameterEditorController::buildDiffFromFile(const QString& filename)
                     noVehicleValue = true;
                 }
 
-                if (!readOnly) {
-                    ParameterEditorDiff* paramDiff = new ParameterEditorDiff(this);
+                ParameterEditorDiff* paramDiff = new ParameterEditorDiff(this);
 
-                    paramDiff->componentId      = componentId;
-                    paramDiff->name             = paramName;
-                    paramDiff->valueType        = ParameterManager::mavTypeToFactType(static_cast<MAV_PARAM_TYPE>(mavParamType));
-                    paramDiff->fileValue        = fileValueStr;
-                    paramDiff->fileValueVar     = fileValueVar;
-                    paramDiff->vehicleValue     = vehicleValueStr;
-                    paramDiff->noVehicleValue   = noVehicleValue;
-                    paramDiff->units            = units;
+                paramDiff->componentId      = componentId;
+                paramDiff->name             = paramName;
+                paramDiff->valueType        = ParameterManager::mavTypeToFactType(static_cast<MAV_PARAM_TYPE>(mavParamType));
+                paramDiff->fileValue        = fileValueStr;
+                paramDiff->fileValueVar     = fileValueVar;
+                paramDiff->vehicleValue     = vehicleValueStr;
+                paramDiff->noVehicleValue   = noVehicleValue;
+                paramDiff->units            = units;
 
-                    _diffList.append(paramDiff);
-                }
+                _diffList.append(paramDiff);
             }
         }
     }
@@ -385,19 +381,10 @@ void ParameterEditorController::_searchTextChanged(void)
             // All of the search items must match in order for the parameter to be added to the list
             if (matched) {
                 for (const auto& searchItem : rgSearchStrings) {
-                    QRegularExpression re = QRegularExpression(searchItem, QRegularExpression::CaseInsensitiveOption);
-                    if (re.isValid()) {
-                        if (!fact->name().contains(re) &&
-                                !fact->shortDescription().contains(re) &&
-                                !fact->longDescription().contains(re)) {
-                            matched = false;
-                        }
-                    } else {
-                        if (!fact->name().contains(searchItem, Qt::CaseInsensitive) &&
-                                !fact->shortDescription().contains(searchItem, Qt::CaseInsensitive) &&
-                                !fact->longDescription().contains(searchItem, Qt::CaseInsensitive)) {
-                            matched = false;
-                        }
+                    if (!fact->name().contains(searchItem, Qt::CaseInsensitive) &&
+                            !fact->shortDescription().contains(searchItem, Qt::CaseInsensitive) &&
+                            !fact->longDescription().contains(searchItem, Qt::CaseInsensitive)) {
+                        matched = false;
                     }
                 }
             }

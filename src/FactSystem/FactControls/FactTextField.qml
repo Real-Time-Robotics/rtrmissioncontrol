@@ -11,17 +11,20 @@ import QGroundControl.ScreenTools   1.0
 QGCTextField {
     id: _textField
 
-    text:               fact ? fact.valueString : ""
-    unitsLabel:         fact ? fact.units : ""
-    showUnits:          true
-    showHelp:           true
-    numericValuesOnly:  fact && !fact.typeIsString
+    text:       fact ? fact.valueString : ""
+    unitsLabel: fact ? fact.units : ""
+    showUnits:  true
+    showHelp:   true
 
     signal updated()
 
     property Fact   fact: null
 
     property string _validateString
+
+    inputMethodHints: ((fact && fact.typeIsString) || ScreenTools.isiOS) ?
+                          Qt.ImhNone :                // iOS numeric keyboard has no done button, we can't use it
+                          Qt.ImhFormattedNumbersOnly  // Forces use of virtual numeric keyboard
 
     onEditingFinished: {
         var errorString = fact.validate(text, false /* convertOnly */)
@@ -30,17 +33,15 @@ QGCTextField {
             _textField.updated()
         } else {
             _validateString = text
-            validationErrorDialogComponent.createObject(mainWindow).open()
+            mainWindow.showComponentDialog(validationErrorDialogComponent, qsTr("Invalid Value"), mainWindow.showDialogDefaultWidth, StandardButton.Save | StandardButton.Cancel)
         }
     }
 
-    onHelpClicked: helpDialogComponent.createObject(mainWindow).open()
+    onHelpClicked: mainWindow.showComponentDialog(helpDialogComponent, qsTr("Value Details"), mainWindow.showDialogDefaultWidth, StandardButton.Save | StandardButton.Cancel)
 
     Component {
         id: validationErrorDialogComponent
-
         ParameterEditorDialog {
-            title:          qsTr("Invalid Value")
             validate:       true
             validateValue:  _validateString
             fact:           _textField.fact
@@ -49,10 +50,8 @@ QGCTextField {
 
     Component {
         id: helpDialogComponent
-
         ParameterEditorDialog {
-            title:          qsTr("Value Details")
-            fact:           _textField.fact
+            fact: _textField.fact
         }
     }
 }

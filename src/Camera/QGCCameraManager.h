@@ -74,7 +74,7 @@ protected slots:
 
 protected:
     virtual QGCCameraControl* _findCamera   (int id);
-    virtual void    _requestCameraInfo      (int compID, int tryCount);
+    virtual void    _requestCameraInfo      (int compID);
     virtual void    _handleHeartbeat        (const mavlink_message_t& message);
     virtual void    _handleCameraInfo       (const mavlink_message_t& message);
     virtual void    _handleStorageInfo      (const mavlink_message_t& message);
@@ -85,7 +85,6 @@ protected:
     virtual void    _handleVideoStreamInfo  (const mavlink_message_t& message);
     virtual void    _handleVideoStreamStatus(const mavlink_message_t& message);
     virtual void    _handleBatteryStatus    (const mavlink_message_t& message);
-    virtual void    _handleTrackingImageStatus(const mavlink_message_t& message);
 
 protected:
 

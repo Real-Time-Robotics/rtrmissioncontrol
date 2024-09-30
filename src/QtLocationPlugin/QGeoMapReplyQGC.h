@@ -73,7 +73,6 @@ private slots:
 
 private:
     void _clearReply            ();
-    void setIgnoreSSLErrorsIfNeeded(QNetworkReply& networkReply);
 
 private:
     QNetworkReply*          _reply;

@@ -10,7 +10,6 @@
 import QtQuick          2.3
 import QtQuick.Controls 2.4
 
-import QGroundControl               1.0
 import QGroundControl.Controls      1.0
 import QGroundControl.Palette       1.0
 import QGroundControl.ScreenTools   1.0
@@ -32,10 +31,8 @@ Button {
     onCheckedChanged: checkable = false
 
     background: Rectangle {
-        anchors.fill:   parent
-        color:          button.checked ? qgcPal.buttonHighlight : Qt.rgba(0,0,0,0)
-        border.color:   "red"
-        border.width:   QGroundControl.corePlugin.showTouchAreas ? 3 : 0
+        anchors.fill: parent
+        color:  button.checked ? qgcPal.buttonHighlight : Qt.rgba(0,0,0,0)
     }
 
     contentItem: Row {

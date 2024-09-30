@@ -9,7 +9,7 @@ defaults:
 env:
   SOURCE_DIR:   ${{ github.workspace }}
   QT_VERSION:   5.12.6
-  ARTIFACT:     QGroundControl.AppImage
+  ARTIFACT:     RTRMissionControl.AppImage
 
 jobs:
   build:
@@ -82,11 +82,11 @@ jobs:
           name: ${{ env.ARTIFACT }}
           path: ${{ runner.temp }}/shadow_build_dir/package/${{ env.ARTIFACT }}
 
-      # Currently disabled since credentials are not working correctly
-      - name: Upload to S3 Bucket
-        if:                 ${{ false }}
-        working-directory:  ${{ runner.temp }}/shadow_build_dir/package
-        run: |
-              aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-              aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-              aws s3 cp ${ARTIFACT} s3://groundcontrol/master --region us-west-2 --acl public-read
+      # # Currently disabled since credentials are not working correctly
+      # - name: Upload to S3 Bucket
+      #   if:                 ${{ false }}
+      #   working-directory:  ${{ runner.temp }}/shadow_build_dir/package
+      #   run: |
+      #         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #         aws s3 cp ${ARTIFACT} s3://groundcontrol/master --region us-west-2 --acl public-read

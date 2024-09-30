@@ -198,7 +198,6 @@ if(BUILD_TESTING)
 	)
 endif()
 
-
 if(ANDROID)
 	add_library(RTRMissionControl SHARED ${QGC_RESOURCES})
 else()
@@ -209,7 +208,7 @@ target_link_libraries(RTRMissionControl PRIVATE qgc)
 
 # Files/directories to install
 install(
-    TARGETS RTRMissionControl
+    TARGETS QGroundControl
     DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 install(
@@ -231,7 +230,7 @@ install(
 )
 
 if(BUILD_TESTING)
-        target_link_libraries(TRMissionControl PRIVATE Qt5::Test)
+        target_link_libraries(RTRMissionControl PRIVATE Qt5::Test)
 endif()
 
 if(NOT QT_MKSPEC MATCHES "winrt")

@@ -1,25 +1,15 @@
 name: Linux Release
+
 on:
   push:
     branches:
-      - "main"
-      - "Stable*"
+      - 'master'
+      - 'Stable*'
     tags:
-      - "v*"
-    paths-ignore:
-      - "docs/**"
+      - 'v*'
   pull_request:
     branches:
-      - "*"
-    paths-ignore:
-      - 'android/**'
-      - 'deploy/**'
-      - 'docs/**'
-      - '.github/workflows/docs_deploy.yml'
-      - '.github/workflows/android.yml'
-      - '.github/workflows/macos.yml'
-      - '.github/workflows/windows.yml'
-
+    - '*'
 
 defaults:
   run:
@@ -28,12 +18,13 @@ defaults:
 env:
   SOURCE_DIR:   ${{ github.workspace }}
   QT_VERSION:   5.15.2
-  ARTIFACT:     RTRMissionControl.AppImage
+    ARTIFACT: RTRMissionControl.AppImage
   BUILD_TYPE:   ${{ fromJSON('["DailyBuild", "StableBuild"]')[ github.ref_type == 'tag' || contains(github.ref, 'Stable_' ) ] }}
 
 jobs:
   build:
-    runs-on:  ubuntu-20.04
+      runs-on: ubuntu-20.04
+
 
     steps:
       - name: Checkout repo

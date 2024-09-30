@@ -3,7 +3,7 @@ name: Linux Release
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
       - 'Stable*'
     tags:
       - 'v4.2.0'

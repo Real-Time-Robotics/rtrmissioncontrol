@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=RTRMissionControl
+GenericName=Ground Control Station
+Comment=UAS ground control station
+Icon=org.mavlink.qgroundcontrol
+Exec=RTRMissionControl
+Terminal=false
+Categories=Utility;

@@ -48,7 +48,6 @@ public:
     void                guidedModeTakeoff               (Vehicle* vehicle, double takeoffAltRel) override;
     void                guidedModeGotoLocation          (Vehicle* vehicle, const QGeoCoordinate& gotoCoord) override;
     void                guidedModeChangeAltitude        (Vehicle* vehicle, double altitudeRel, bool pauseVehicle) override;
-    double              minimumTakeoffAltitude          (Vehicle* vehicle) override;
     void                startMission                    (Vehicle* vehicle) override;
     bool                isGuidedMode                    (const Vehicle* vehicle) const override;
     void                initializeVehicle               (Vehicle* vehicle) override;
@@ -64,7 +63,8 @@ public:
     QString             brandImageOutdoor               (const Vehicle* vehicle) const override { Q_UNUSED(vehicle); return QStringLiteral("/qmlimages/PX4/BrandImage"); }
     QString             autoDisarmParameter             (Vehicle* vehicle) override { Q_UNUSED(vehicle); return QStringLiteral("COM_DISARM_LAND"); }
     uint32_t            highLatencyCustomModeTo32Bits   (uint16_t hlCustomMode) override;
-    bool                supportsNegativeThrust          (Vehicle *vehicle) override;
+    bool                supportsNegativeThrust          (Vehicle* vehicle) override;
+    QString             getHobbsMeter                   (Vehicle* vehicle) override;
 
 protected:
     typedef struct {

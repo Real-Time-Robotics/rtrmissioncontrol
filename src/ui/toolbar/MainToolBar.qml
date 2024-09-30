@@ -165,7 +165,7 @@ Rectangle {
     Rectangle {
         anchors.bottom: parent.bottom
         height:         _root.height * 0.05
-        width:          _activeVehicle ? _activeVehicle.parameterManager.loadProgress * parent.width : 0
+        width:          _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
         color:          qgcPal.colorGreen
         visible:        !largeProgressBar.visible
     }
@@ -180,25 +180,25 @@ Rectangle {
         color:          qgcPal.window
         visible:        _showLargeProgress
 
-        property bool _initialDownloadComplete: _activeVehicle ? _activeVehicle.parameterManager.parametersReady : true
+        property bool _initialDownloadComplete: _activeVehicle ? _activeVehicle.initialConnectComplete : true
         property bool _userHide:                false
         property bool _showLargeProgress:       !_initialDownloadComplete && !_userHide && qgcPal.globalTheme === QGCPalette.Light
 
         Connections {
             target:                 QGroundControl.multiVehicleManager
-            onActiveVehicleChanged: largeProgressBar._userHide = false
+            function onActiveVehicleChanged(activeVehicle) { largeProgressBar._userHide = false }
         }
 
         Rectangle {
             anchors.top:    parent.top
             anchors.bottom: parent.bottom
-            width:          _activeVehicle ? _activeVehicle.parameterManager.loadProgress * parent.width : 0
+            width:          _activeVehicle ? _activeVehicle.loadProgress * parent.width : 0
             color:          qgcPal.colorGreen
         }
 
         QGCLabel {
             anchors.centerIn:   parent
-            text:               qsTr("Downloading Parameters")
+            text:               qsTr("Downloading")
             font.pointSize:     ScreenTools.largeFontPointSize
         }
 

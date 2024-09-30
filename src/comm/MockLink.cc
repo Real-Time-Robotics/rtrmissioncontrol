@@ -93,6 +93,8 @@ MockLink::MockLink(SharedLinkConfigurationPtr& config)
     _vehicleSystemId    = mockConfig->incrementVehicleId() ?  _nextVehicleSystemId++ : _nextVehicleSystemId;
     _vehicleLatitude    = _defaultVehicleLatitude + ((_vehicleSystemId - 128) * 0.0001);
     _vehicleLongitude   = _defaultVehicleLongitude + ((_vehicleSystemId - 128) * 0.0001);
+    _boardVendorId      = mockConfig->boardVendorId();
+    _boardProductId     = mockConfig->boardProductId();
 
     QObject::connect(this, &MockLink::writeBytesQueuedSignal, this, &MockLink::_writeBytesQueued, Qt::QueuedConnection);
 
@@ -1204,8 +1206,8 @@ void MockLink::_respondWithAutopilotVersion(void)
                                             (uint8_t *)&customVersion,       // flight_custom_version,
                                             (uint8_t *)&customVersion,       // middleware_custom_version,
                                             (uint8_t *)&customVersion,       // os_custom_version,
-                                            0,                               // vendor_id,
-                                            0,                               // product_id,
+                                            _boardVendorId,
+                                            _boardProductId,
                                             0,                               // uid
                                             0);                              // uid2
     respondWithMavlinkMessage(msg);
@@ -1634,16 +1636,55 @@ bool MockLink::_handleRequestMessage(const mavlink_command_long_t& request, bool
     noAck = false;
 
     switch ((int)request.param1) {
+    case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
+    {
+        switch (_failureMode) {
+        case MockConfiguration::FailNone:
+            break;
+        case MockConfiguration::FailInitialConnectRequestMessageAutopilotVersionFailure:
+            return false;
+        case MockConfiguration::FailInitialConnectRequestMessageAutopilotVersionLost:
+            return true;
+        default:
+            break;
+        }
+
+        _respondWithAutopilotVersion();
+    }
+        return true;
+
+    case MAVLINK_MSG_ID_PROTOCOL_VERSION:
+    {
+        switch (_failureMode) {
+        case MockConfiguration::FailNone:
+            break;
+        case MockConfiguration::FailInitialConnectRequestMessageProtocolVersionFailure:
+            return false;
+        case MockConfiguration::FailInitialConnectRequestMessageProtocolVersionLost:
+            return true;
+        default:
+            break;
+        }
+
+        uint8_t             nullHash[8] = { 0 };
+        mavlink_message_t   responseMsg;
+        mavlink_msg_protocol_version_pack_chan(_vehicleSystemId,
+                                                _vehicleComponentId,
+                                                mavlinkChannel(),
+                                                &responseMsg,
+                                               200,
+                                               100,
+                                               200,
+                                               nullHash,
+                                               nullHash);
+        respondWithMavlinkMessage(responseMsg);
+    }
+        return true;
+
     case MAVLINK_MSG_ID_COMPONENT_INFORMATION:
         if (_firmwareType == MAV_AUTOPILOT_PX4) {
-            switch (static_cast<int>(request.param2)) {
-            case COMP_METADATA_TYPE_VERSION:
-                _sendVersionMetaData();
-                return true;
-            case COMP_METADATA_TYPE_PARAMETER:
-                _sendParameterMetaData();
-                return true;
-            }
+            _sendGeneralMetaData();
+            return true;
         }
         break;
     case MAVLINK_MSG_ID_DEBUG:
@@ -1656,8 +1697,6 @@ bool MockLink::_handleRequestMessage(const mavlink_command_long_t& request, bool
             return false;
         case FailRequestMessageCommandNoResponse:
             noAck = true;
-            return true;
-        case FailRequestMessageCommandAcceptedSecondAttempMsgSent:
             return true;
         }
     {
@@ -1675,49 +1714,25 @@ bool MockLink::_handleRequestMessage(const mavlink_command_long_t& request, bool
     return false;
 }
 
-void MockLink::_sendVersionMetaData(void)
+void MockLink::_sendGeneralMetaData(void)
 {
     mavlink_message_t   responseMsg;
 #if 1
-    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_METADATA_URI_LEN]       = "mftp://[;comp=1]version.json.gz";
+    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_GENERAL_METADATA_URI_LEN]       = "mftp://[;comp=1]general.json";
 #else
-    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_METADATA_URI_LEN]       = "https://bit.ly/31nm0fs";
+    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_GENERAL_METADATA_URI_LEN]       = "https://bit.ly/31nm0fs";
 #endif
-    char                translationURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_TRANSLATION_URI_LEN] = "";
+    char                peripheralsMetaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_PERIPHERALS_METADATA_URI_LEN]       = "";
 
     mavlink_msg_component_information_pack_chan(_vehicleSystemId,
                                                 _vehicleComponentId,
                                                 mavlinkChannel(),
                                                 &responseMsg,
                                                 0,                          // time_boot_ms
-                                                COMP_METADATA_TYPE_VERSION,
-                                                1,                          // comp_metadata_uid
+                                                100,                        // general_metadata_file_crc
                                                 metaDataURI,
-                                                0,                          // comp_translation_uid
-                                                translationURI);
-    respondWithMavlinkMessage(responseMsg);
-}
-
-void MockLink::_sendParameterMetaData(void)
-{
-    mavlink_message_t   responseMsg;
-#if 1
-    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_METADATA_URI_LEN]       = "mftp://[;comp=1]parameter.json";
-#else
-    char                metaDataURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_METADATA_URI_LEN]       = "https://bit.ly/2ZKRIRE";
-#endif
-    char                translationURI[MAVLINK_MSG_COMPONENT_INFORMATION_FIELD_TRANSLATION_URI_LEN] = "";
-
-    mavlink_msg_component_information_pack_chan(_vehicleSystemId,
-                                                _vehicleComponentId,
-                                                mavlinkChannel(),
-                                                &responseMsg,
-                                                0,                              // time_boot_ms
-                                                COMP_METADATA_TYPE_PARAMETER,
-                                                1,                              // comp_metadata_uid
-                                                metaDataURI,
-                                                0,                              // comp_translation_uid
-                                                translationURI);
+                                                0,                          // peripherals_metadata_file_crc
+                                                peripheralsMetaDataURI);
     respondWithMavlinkMessage(responseMsg);
 }
 

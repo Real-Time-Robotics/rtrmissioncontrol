@@ -352,22 +352,20 @@ void ParameterEditorController::resetAllToVehicleConfiguration(void)
     refresh();
 }
 
-bool ParameterEditorController::_shouldShow(Fact* fact)
+bool ParameterEditorController::_shouldShow(Fact* fact) const
 {
-    bool show = _showModifiedOnly ? (fact->defaultValueAvailable() ? (fact->valueEqualsDefault() ? false : true) : false) : true;
-    return show;
+    if (!_showModifiedOnly) {
+        return true;
+    }
+
+    return fact->defaultValueAvailable() && !fact->valueEqualsDefault();
 }
 
 void ParameterEditorController::_searchTextChanged(void)
 {
     QObjectList newParameterList;
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    QStringList rgSearchStrings = _searchText.split(' ', QString::SkipEmptyParts);
-#else
     QStringList rgSearchStrings = _searchText.split(' ', Qt::SkipEmptyParts);
-#endif
-
 
     if (rgSearchStrings.isEmpty() && !_showModifiedOnly) {
         ParameterEditorCategory* category = _categories.count() ? _categories.value<ParameterEditorCategory*>(0) : nullptr;

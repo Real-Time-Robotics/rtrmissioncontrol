@@ -13,6 +13,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QDir>
+#include <QQuickWindow>
 
 #ifndef QGC_DISABLE_UVC
 #include <QCameraInfo>
@@ -534,6 +535,7 @@ VideoManager::isGStreamer()
             videoSource == VideoSettings::videoSourceMPEGTS ||
             videoSource == VideoSettings::videoSource3DRSolo ||
             videoSource == VideoSettings::videoSourceParrotDiscovery ||
+            videoSource == VideoSettings::videoSourceYuneecMantisG ||
             autoStreamConfigured();
 #else
     return false;
@@ -568,7 +570,7 @@ void
 VideoManager::_initVideo()
 {
 #if defined(QGC_GST_STREAMING)
-    QQuickItem* root = qgcApp()->mainRootWindow();
+    QQuickWindow* root = qgcApp()->mainRootWindow();
 
     if (root == nullptr) {
         qCDebug(VideoManagerLog) << "mainRootWindow() failed. No root window";
@@ -667,11 +669,7 @@ VideoManager::_updateSettings(unsigned id)
                             settingsChanged |= _updateVideoUri(id, pTinfo->uri());
                             break;
                         case VIDEO_STREAM_TYPE_RTPUDP:
-                            settingsChanged |= _updateVideoUri(
-                                            id,
-                                            pInfo->uri().contains("udp://")
-                                                ? pInfo->uri() // Specced case
-                                                : QStringLiteral("udp://0.0.0.0:%1").arg(pInfo->uri()));
+                            settingsChanged |= _updateVideoUri(id, QStringLiteral("udp://0.0.0.0:%1").arg(pTinfo->uri()));
                             break;
                         case VIDEO_STREAM_TYPE_MPEG_TS_H264:
                             settingsChanged |= _updateVideoUri(id, QStringLiteral("mpegts://0.0.0.0:%1").arg(pTinfo->uri()));
@@ -700,6 +698,8 @@ VideoManager::_updateSettings(unsigned id)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("udp://0.0.0.0:5600"));
     else if (source == VideoSettings::videoSourceParrotDiscovery)
         settingsChanged |= _updateVideoUri(0, QStringLiteral("udp://0.0.0.0:8888"));
+    else if (source == VideoSettings::videoSourceYuneecMantisG)
+        settingsChanged |= _updateVideoUri(0, QStringLiteral("rtsp://192.168.42.1:554/live"));
 
     return settingsChanged;
 }
@@ -737,6 +737,10 @@ VideoManager::_updateVideoUri(unsigned id, const QString& uri)
 void
 VideoManager::_restartVideo(unsigned id)
 {
+#if !defined(QGC_GST_STREAMING)
+    Q_UNUSED(id);
+#endif
+
     if (qgcApp()->runningUnitTests()) {
         return;
     }
@@ -786,6 +790,8 @@ VideoManager::_startReceiver(unsigned id)
             _videoReceiver[id]->start(_videoUri[id], timeout, _lowLatencyStreaming[id] ? -1 : 0);
         }
     }
+#else
+    Q_UNUSED(id);
 #endif
 }
 
@@ -799,6 +805,8 @@ VideoManager::_stopReceiver(unsigned id)
     } else if (_videoReceiver[id] != nullptr) {
         _videoReceiver[id]->stop();
     }
+#else
+    Q_UNUSED(id);
 #endif
 }
 

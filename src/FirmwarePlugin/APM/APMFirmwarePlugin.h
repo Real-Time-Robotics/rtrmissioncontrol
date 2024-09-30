@@ -7,12 +7,7 @@
  *
  ****************************************************************************/
 
-
-/// @file
-///     @author Don Gagne <don@thegagnes.com>
-
-#ifndef APMFirmwarePlugin_H
-#define APMFirmwarePlugin_H
+#pragma once
 
 #include "FirmwarePlugin.h"
 #include "QGCLoggingCategory.h"
@@ -81,6 +76,7 @@ public:
     QObject*            _loadParameterMetaData          (const QString& metaDataFile) override;
     QString             brandImageIndoor                (const Vehicle* vehicle) const override { Q_UNUSED(vehicle); return QStringLiteral("/qmlimages/APM/BrandImage"); }
     QString             brandImageOutdoor               (const Vehicle* vehicle) const override { Q_UNUSED(vehicle); return QStringLiteral("/qmlimages/APM/BrandImage"); }
+    QString             getHobbsMeter                   (Vehicle* vehicle) override; 
 
 protected:
     /// All access to singleton is through stack specific implementation
@@ -124,4 +120,17 @@ private:
     static QMutex&          _reencodeMavlinkChannelMutex();
 };
 
-#endif
+class APMFirmwarePluginInstanceData : public QObject
+{
+    Q_OBJECT
+
+public:
+    APMFirmwarePluginInstanceData(QObject* parent = nullptr)
+        : QObject(parent)
+    {
+
+    }
+
+    QTime lastBatteryStatusTime;
+    QTime lastHomePositionTime;
+};

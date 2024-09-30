@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(RTRMissionControl  LANGUAGES C CXX)
+project(RTRMissionControl LANGUAGES C CXX)
+
+include(GNUInstallDirs)
 
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug;Release;RelWithDebInfo;MinSizeRel;Coverage")
 
@@ -84,29 +86,36 @@ endif()
 # GStreamer
 #
 find_package(PkgConfig)
-pkg_check_modules(GST
-    gstreamer-1.0>=1.14
-    gstreamer-video-1.0>=1.14
-    gstreamer-gl-1.0>=1.14
-    egl
-)
 
-if (GST_FOUND)
-    include_directories(
-        ${GST_INCLUDE_DIRS}
-        src/Taisync
-        src/Microhard
-    )
-    add_definitions(
-        -DQGC_GST_STREAMING
-        -DQGC_GST_TAISYNC_ENABLED
-        -DQGC_GST_MICROHARD_ENABLED
-    )
+set(GST_DEPENDENCIES
+	gstreamer-1.0>=1.14
+	gstreamer-video-1.0>=1.14
+	gstreamer-gl-1.0>=1.14
+	)
+
+if (MSVC)
+	pkg_check_modules(GST
+		${GST_DEPENDENCIES}
+		)
+else()
+	pkg_check_modules(GST
+		${GST_DEPENDENCIES}
+		egl
+		)
 endif()
 
-add_definitions(
-    -DQGC_ENABLE_MAVLINK_INSPECTOR
-)
+if (GST_FOUND)
+    add_definitions(
+        -DQGC_GST_STREAMING
+    )
+
+    option(QGC_GST_MICROHARD_ENABLED "Enable microhard" OFF)
+    option(QGC_GST_TAISYNC_ENABLED "Enable taisyng" OFF)
+else()
+	if (QGC_GST_MICROHARD_ENABLED OR QGC_GST_TAISYNC_ENABLED)
+		message(FATAL_ERROR "You tried to enable Microhard or Taisync but gstreamer is not found. Make sure to set PKG_CONFIG_EXECUTABLE and/or PKG_CONFIG_PATH properly.")
+	endif()
+endif()
 
 #=============================================================================
 # Qt5
@@ -152,6 +161,8 @@ include(CompileOptions)
 include_directories(
 	libs/eigen
 
+	libs/libevents
+
 	libs/mavlink/include/mavlink/v2.0
 	libs/mavlink/include/mavlink/v2.0/ardupilotmega
 	libs/mavlink/include/mavlink/v2.0/common
@@ -163,14 +174,23 @@ add_subdirectory(libs)
 add_subdirectory(src)
 
 set(QGC_RESOURCES
-	qgcresources.qrc
-	qgroundcontrol.qrc
-	qgcimages.qrc
-	src/FirmwarePlugin/APM/APMResources.qrc
-	src/FirmwarePlugin/PX4/PX4Resources.qrc
-	src/Airmap/airmap.qrc
-	src/Airmap/dummy/airmap_dummy.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/qgcimages.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/qgcresources.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/qgroundcontrol.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/resources/InstrumentValueIcons/InstrumentValueIcons.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Airmap/airmap.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Airmap/dummy/airmap_dummy.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/src/FirmwarePlugin/APM/APMResources.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/src/FirmwarePlugin/PX4/PX4Resources.qrc
+	${CMAKE_CURRENT_SOURCE_DIR}/VideoReceiverApp/qml.qrc
 	)
+
+if (WIN32)
+	# append application icon resource for Windows
+	set(QGC_RESOURCES
+		${QGC_RESOURCES}
+		${CMAKE_CURRENT_SOURCE_DIR}/windows/QGroundControl.rc)
+endif()
 
 if(BUILD_TESTING)
 	list(APPEND QGC_RESOURCES
@@ -178,16 +198,40 @@ if(BUILD_TESTING)
 	)
 endif()
 
+
 if(ANDROID)
-	add_library(QGroundControl SHARED ${QGC_RESOURCES})
+	add_library(RTRMissionControl SHARED ${QGC_RESOURCES})
 else()
 	add_executable(RTRMissionControl ${QGC_RESOURCES})
 endif()
 
 target_link_libraries(RTRMissionControl PRIVATE qgc)
 
+# Files/directories to install
+install(
+    TARGETS RTRMissionControl
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(
+    DIRECTORY ${CMAKE_SOURCE_DIR}/resources/
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/qgroundcontrol
+)
+install(
+    FILES ${CMAKE_SOURCE_DIR}/deploy/org.mavlink.qgroundcontrol.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+install(
+    FILES ${CMAKE_SOURCE_DIR}/resources/icons/qgroundcontrol.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/128x128/apps/
+    RENAME org.mavlink.qgroundcontrol.png
+)
+install(
+    FILES ${CMAKE_SOURCE_DIR}/deploy/org.mavlink.qgroundcontrol.metainfo.xml
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo/
+)
+
 if(BUILD_TESTING)
-        target_link_libraries(RTRMissionControl PRIVATE Qt5::Test)
+        target_link_libraries(TRMissionControl PRIVATE Qt5::Test)
 endif()
 
 if(NOT QT_MKSPEC MATCHES "winrt")
@@ -198,4 +242,3 @@ if(NOT QT_MKSPEC MATCHES "winrt")
 endif()
 
 include(QGCDeploy)
-

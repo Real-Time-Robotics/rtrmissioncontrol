@@ -3329,26 +3329,6 @@ User provided field elevation in meters. This is used to improve the calculation
 
 - Volatile: True
 
-## BARO_ALTERR_MAX: Altitude error maximum
-
-*Note: This parameter is for advanced users*
-
-This is the maximum acceptable altitude discrepancy between GPS altitude and barometric presssure altitude calculated against a standard atmosphere for arming checks to pass. If you are getting an arming error due to this parameter then you may have a faulty or substituted barometer. A common issue is vendors replacing a MS5611 in a "Pixhawk" with a MS5607. If you have that issue then please see BARO_OPTIONS parameter to force the MS5611 to be treated as a MS5607. This check is disabled if the value is zero.
-
-- Units: m
-
-- Increment: 1
-
-- Range: 0 5000
-
-## BARO_OPTIONS: Barometer options
-
-*Note: This parameter is for advanced users*
-
-Barometer options
-
-- Bitmask: 0:Treat MS5611 as MS5607
-
 # BARO1WCF Parameters
 
 ## BARO1_WCF_ENABLE: Wind coefficient enable
@@ -6384,13 +6364,12 @@ This allows selection of a PX4 or VRBRAIN board type. If set to zero then the bo
 
 *Note: This parameter is for advanced users*
 
-This allows for the IO co-processor on boards with an IOMCU to be disabled. Setting to 2 will enable the IOMCU but not attempt to update firmware on startup
+This allows for the IO co-processor on FMUv1 and FMUv2 to be disabled
 
 |Value|Meaning|
 |:---:|:---:|
 |0|Disabled|
 |1|Enabled|
-|2|EnableNoFWUpdate|
 
 - RebootRequired: True
 
@@ -6398,7 +6377,7 @@ This allows for the IO co-processor on boards with an IOMCU to be disabled. Sett
 
 This controls the activation of the safety button. It allows you to control if the safety button can be used for safety enable and/or disable, and whether the button is only active when disarmed
 
-- Bitmask: 0:ActiveForSafetyDisable,1:ActiveForSafetyEnable,2:ActiveWhenArmed,3:Force safety on when the aircraft disarms
+- Bitmask: 0:ActiveForSafetyEnable,1:ActiveForSafetyDisable,2:ActiveWhenArmed,3:Force safety on when the aircraft disarms
 
 ## BRD_VBUS_MIN: Autopilot board voltage requirement
 
@@ -6898,10 +6877,6 @@ Auxiliary RC Options function executed on pin change
 |163|Mount Lock|
 |164|Pause Stream Logging|
 |165|Arm/Emergency Motor Stop|
-|166|Camera Record Video|
-|167|Camera Zoom|
-|168|Camera Manual Focus|
-|169|Camera Auto Focus|
 |212|Mount1 Roll|
 |213|Mount1 Pitch|
 |214|Mount1 Yaw|
@@ -7011,10 +6986,6 @@ Auxiliary RC Options function executed on pin change
 |163|Mount Lock|
 |164|Pause Stream Logging|
 |165|Arm/Emergency Motor Stop|
-|166|Camera Record Video|
-|167|Camera Zoom|
-|168|Camera Manual Focus|
-|169|Camera Auto Focus|
 |212|Mount1 Roll|
 |213|Mount1 Pitch|
 |214|Mount1 Yaw|
@@ -7124,10 +7095,6 @@ Auxiliary RC Options function executed on pin change
 |163|Mount Lock|
 |164|Pause Stream Logging|
 |165|Arm/Emergency Motor Stop|
-|166|Camera Record Video|
-|167|Camera Zoom|
-|168|Camera Manual Focus|
-|169|Camera Auto Focus|
 |212|Mount1 Roll|
 |213|Mount1 Pitch|
 |214|Mount1 Yaw|
@@ -7237,10 +7204,6 @@ Auxiliary RC Options function executed on pin change
 |163|Mount Lock|
 |164|Pause Stream Logging|
 |165|Arm/Emergency Motor Stop|
-|166|Camera Record Video|
-|167|Camera Zoom|
-|168|Camera Manual Focus|
-|169|Camera Auto Focus|
 |212|Mount1 Roll|
 |213|Mount1 Pitch|
 |214|Mount1 Yaw|
@@ -7267,7 +7230,6 @@ how to trigger the camera to take a picture
 |0|Servo|
 |1|Relay|
 |2|GoPro in Solo Gimbal|
-|3|Mount (Siyi)|
 
 ## CAM_DURATION: Duration that shutter is held open
 
@@ -7381,7 +7343,7 @@ RunCam deviee type used to determine OSD menu structure and shutter options.
 |1|RunCam Split Micro/RunCam with UART|
 |2|RunCam Split|
 |3|RunCam Split4 4k|
-|4|RunCam Hybrid/RunCam Thumb Pro|
+|4|RunCam Hybrid|
 
 ## CAM_RC_FEATURES: RunCam features available
 
@@ -9338,9 +9300,9 @@ DroneCAN driver index, 0 to disable DroneCAN
 
 ## DID_OPTIONS: OpenDroneID options
 
-Options for OpenDroneID subsystem
+Options for OpenDroneID subsystem. Bit 0 means to enforce arming checks
 
-- Bitmask: 0:EnforceArming, 1:AllowNonGPSPosition
+- Bitmask: 0:EnforceArming
 
 ## DID_BARO_ACC: Barometer vertical accuraacy
 
@@ -14696,7 +14658,6 @@ Mount Type
 |5|SToRM32 Serial|
 |6|Gremsy|
 |7|BrushlessPWM|
-|8|Siyi|
 
 - RebootRequired: True
 
@@ -14879,7 +14840,6 @@ Mount Type
 |5|SToRM32 Serial|
 |6|Gremsy|
 |7|BrushlessPWM|
-|8|Siyi|
 
 - RebootRequired: True
 
@@ -21979,7 +21939,7 @@ Vehicle will continue landing vertically until this height if target is not foun
 
 Precision Landing Extra Options
 
-- Bitmask: 0: Moving Landing Target, 1: Allow Precision Landing after manual reposition 
+- Bitmask: 0: Moving Landing Target
 
 ## PLND_ORIENT: Camera Orientation
 
@@ -22836,7 +22796,7 @@ Timeout after which RC overrides will no longer be used, and RC input will resum
 
 RC input options
 
-- Bitmask: 0:Ignore RC Receiver, 1:Ignore MAVLink Overrides, 2:Ignore Receiver Failsafe bit but allow other RC failsafes if setup, 3:FPort Pad, 4:Log RC input bytes, 5:Arming check throttle for 0 input, 6:Skip the arming check for neutral Roll/Pitch/Yaw sticks, 7:Allow Switch reverse, 8:Use passthrough for CRSF telemetry, 9:Suppress CRSF mode/rate message for ELRS systems,10:Enable multiple receiver support, 11:Use Link Quality for RSSI with CRSF, 13: Use 420kbaud for ELRS protocol
+- Bitmask: 0:Ignore RC Receiver, 1:Ignore MAVLink Overrides, 2:Ignore Receiver Failsafe bit but allow other RC failsafes if setup, 3:FPort Pad, 4:Log RC input bytes, 5:Arming check throttle for 0 input, 6:Skip the arming check for neutral Roll/Pitch/Yaw sticks, 7:Allow Switch reverse, 8:Use passthrough for CRSF telemetry, 9:Suppress CRSF mode/rate message for ELRS systems,10:Enable multiple receiver support, 11:CRSF RSSI shows Link Quality
 
 ## RC_PROTOCOLS: RC protocols enabled
 
@@ -22999,10 +22959,6 @@ Function assigned to this RC channel
 |163|Mount Lock|
 |164|Pause Stream Logging|
 |165|Arm/Emergency Motor Stop|
-|166|Camera Record Video|
-|167|Camera Zoom|
-|168|Camera Manual Focus|
-|169|Camera Auto Focus|
 |212|Mount1 Roll|
 |213|Mount1 Pitch|
 |214|Mount1 Yaw|

@@ -1,0 +1,8 @@
+{
+  "files.associations": {
+    "*.py": "python",
+    "*.qml": "qml",
+    "iostream": "c",
+    "thread": "c"
+  }
+}

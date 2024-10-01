@@ -58,7 +58,6 @@ public:
     Cache *cache;
     QSet<QByteArray> ptrTargets;
     QMap<QByteArray, Service> services;
-    QSet<QByteArray> hostnames;
 
     QTimer queryTimer;
     QTimer serviceTimer;
@@ -73,7 +72,6 @@ private Q_SLOTS:
     void onServiceTimeout();
 
 private:
-    void updateHostnames();
 
     Browser *const q;
 };

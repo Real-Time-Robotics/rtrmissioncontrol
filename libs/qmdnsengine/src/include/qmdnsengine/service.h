@@ -149,8 +149,6 @@ private:
     ServicePrivate *const d;
 };
 
-QMDNSENGINE_EXPORT QDebug operator<<(QDebug debug, const Service &service);
-
 }
 
 #endif // QMDNSENGINE_SERVICE_H

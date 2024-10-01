@@ -14,9 +14,6 @@
 
 SettingsManager::SettingsManager(QGCApplication* app, QGCToolbox* toolbox)
     : QGCTool(app, toolbox)
-#if defined(QGC_AIRMAP_ENABLED)
-    , _airMapSettings       (nullptr)
-#endif
     , _appSettings                  (nullptr)
     , _unitsSettings                (nullptr)
     , _autoConnectSettings          (nullptr)
@@ -29,9 +26,11 @@ SettingsManager::SettingsManager(QGCApplication* app, QGCToolbox* toolbox)
     , _offlineMapsSettings          (nullptr)
     , _firmwareUpgradeSettings      (nullptr)
     , _adsbVehicleManagerSettings   (nullptr)
+    , _gimbalControllerSettings     (nullptr)
 #if !defined(NO_ARDUPILOT_DIALECT)
     , _apmMavlinkStreamRateSettings (nullptr)
 #endif
+    , _remoteIDSettings             (nullptr)
 {
 
 }
@@ -54,10 +53,9 @@ void SettingsManager::setToolbox(QGCToolbox *toolbox)
     _offlineMapsSettings =          new OfflineMapsSettings         (this);
     _firmwareUpgradeSettings =      new FirmwareUpgradeSettings     (this);
     _adsbVehicleManagerSettings =   new ADSBVehicleManagerSettings  (this);
+    _gimbalControllerSettings =     new GimbalControllerSettings       (this);
 #if !defined(NO_ARDUPILOT_DIALECT)
     _apmMavlinkStreamRateSettings = new APMMavlinkStreamRateSettings(this);
 #endif
-#if defined(QGC_AIRMAP_ENABLED)
-    _airMapSettings =               new AirMapSettings          (this);
-#endif
+    _remoteIDSettings =             new RemoteIDSettings            (this); 
 }

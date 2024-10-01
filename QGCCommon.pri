@@ -106,19 +106,22 @@ linux {
         DEFINES += QGC_GST_MICROHARD_ENABLED 
         QMAKE_CXXFLAGS += -fvisibility=hidden
         QMAKE_CXXFLAGS_WARN_ON += -Werror \
-            -Wno-unused-parameter           # gst-plugins-good
+            -Wno-unused-parameter \         # gst-plugins-good
+            -Wno-unused-but-set-variable \ # eigen & QGCTileCacheWorker.cpp
+            -Wno-deprecated-declarations    # eigen
     } else {
         error("Unsupported Mac toolchain, only 64-bit LLVM+clang is supported")
     }
 } else : ios {
     message("iOS build")
-    CONFIG  += iOSBuild MobileBuild app_bundle NoSerialBuild
+    CONFIG  += iOSBuild MobileBuild app_bundle
     CONFIG  -= bitcode
     DEFINES += __ios__
     DEFINES += QGC_NO_GOOGLE_MAPS
     DEFINES += NO_SERIAL_LINK
     DEFINES += QGC_DISABLE_UVC
     DEFINES += QGC_GST_TAISYNC_ENABLED
+    DEFINES += NO_SERIAL_LINK
     QMAKE_IOS_DEPLOYMENT_TARGET = 11.0
     QMAKE_APPLE_TARGETED_DEVICE_FAMILY = 1,2 # Universal
     QMAKE_LFLAGS += -Wl,-no_pie
@@ -138,6 +141,10 @@ linux|macx|ios {
             QMAKE_CC  = $$PWD/tools/iosccachecxx.sh
         }
     }
+}
+
+contains(DEFINES, NO_SERIAL_LINK) {
+    message("Serial port support disabled")
 }
 
 !MacBuild:!AndroidBuild {
@@ -192,6 +199,8 @@ exists ($$PWD/.git) {
 DEFINES += APP_VERSION_STR=\"\\\"$$APP_VERSION_STR\\\"\"
 
 AndroidBuild {
+    QGC_ANDROID_PACKAGE = org.mavlink.qgroundcontrol
+    
     message(VERSION $${VERSION})
     MAJOR_VERSION   = $$section(VERSION, ".", 0, 0)
     MINOR_VERSION   = $$section(VERSION, ".", 1, 1)
@@ -223,6 +232,10 @@ AndroidBuild {
     lessThan(DEV_VERSION, 100) {
         DEV_VERSION = $$join(DEV_VERSION, "", "0")
     }
+
+    # Use a shell command to strip "rc" and everything after it.
+    # Otherwise rc version tags will break the Android build.
+    PATCH_VERSION = $$system(echo $$PATCH_VERSION | sed 's/rc.*//')
 
     # Bitness for android version number is 66/34 instead of 64/32 in because of a required version number bump screw-up ages ago
     equals(ANDROID_TARGET_ARCH, arm64-v8a)  {

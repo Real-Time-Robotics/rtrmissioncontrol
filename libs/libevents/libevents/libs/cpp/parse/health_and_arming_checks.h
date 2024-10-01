@@ -1,9 +1,10 @@
 #pragma once
 
+#include <libevents_definitions.h>
+
 #include <cstdint>
 #include <functional>
 
-#include "../common/event_type.h"
 #include "parser.h"
 
 namespace events

@@ -22,8 +22,6 @@
  * IN THE SOFTWARE.
  */
 
-#include <utility>
-
 #include <qmdnsengine/abstractserver.h>
 #include <qmdnsengine/browser.h>
 #include <qmdnsengine/cache.h>
@@ -91,11 +89,7 @@ bool BrowserPrivate::updateService(const QByteArray &fqName)
     QList<Record> txtRecords;
     if (cache->lookupRecords(fqName, TXT, txtRecords)) {
         QMap<QByteArray, QByteArray> attributes;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 6, 0))
-		for (const Record &record : std::as_const(txtRecords)) {
-#else
-		for (const Record &record : qAsConst(txtRecords)) {
-#endif
+        for (const Record &record : qAsConst(txtRecords)) {
             for (auto i = record.attributes().constBegin();
                     i != record.attributes().constEnd(); ++i) {
                 attributes.insert(i.key(), i.value());
@@ -113,7 +107,6 @@ bool BrowserPrivate::updateService(const QByteArray &fqName)
     }
 
     services.insert(fqName, service);
-    hostnames.insert(service.hostname());
 
     return false;
 }
@@ -124,75 +117,44 @@ void BrowserPrivate::onMessageReceived(const Message &message)
         return;
     }
 
-    const bool any = type == MdnsBrowseType;
-
     // Use a set to track all services that are updated in the message to
     // prevent unnecessary queries for SRV and TXT records
     QSet<QByteArray> updateNames;
     const auto records = message.records();
     for (const Record &record : records) {
-        bool cacheRecord = false;
-
+        cache->addRecord(record);
+        bool any = type == MdnsBrowseType;
         switch (record.type()) {
         case PTR:
             if (any && record.name() == MdnsBrowseType) {
                 ptrTargets.insert(record.target());
                 serviceTimer.start();
-                cacheRecord = true;
             } else if (any || record.name() == type) {
                 updateNames.insert(record.target());
-                cacheRecord = true;
             }
             break;
         case SRV:
         case TXT:
             if (any || record.name().endsWith("." + type)) {
                 updateNames.insert(record.name());
-                cacheRecord = true;
             }
             break;
-        }
-        if (cacheRecord) {
-            cache->addRecord(record);
         }
     }
 
     // For each of the services marked to be updated, perform the update and
     // make a list of all missing SRV records
     QSet<QByteArray> queryNames;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 6, 0))
-	for (const QByteArray &name : std::as_const(updateNames)) {
-#else
-	for (const QByteArray &name : qAsConst(updateNames)) {
-#endif
+    for (const QByteArray &name : qAsConst(updateNames)) {
         if (updateService(name)) {
             queryNames.insert(name);
-        }
-    }
-
-    // Cache A / AAAA records after services are processed to ensure hostnames are known
-    for (const Record &record : records) {
-        bool cacheRecord = false;
-
-        switch (record.type()) {
-            case A:
-            case AAAA:
-                cacheRecord = hostnames.contains(record.name());
-                break;
-        }
-        if (cacheRecord) {
-            cache->addRecord(record);
         }
     }
 
     // Build and send a query for all of the SRV and TXT records
     if (queryNames.count()) {
         Message queryMessage;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 6, 0))
-		for (const QByteArray &name : std::as_const(queryNames)) {
-#else
-		for (const QByteArray &name : qAsConst(queryNames)) {
-#endif
+        for (const QByteArray &name : qAsConst(queryNames)) {
             Query query;
             query.setName(name);
             query.setType(SRV);
@@ -219,11 +181,14 @@ void BrowserPrivate::onShouldQuery(const Record &record)
 
 void BrowserPrivate::onRecordExpired(const Record &record)
 {
-    // If the SRV record has expired for a service, then it must be
+    // If the PTR or SRV record has expired for a service, then it must be
     // removed - TXT records on the other hand, cause an update
 
     QByteArray serviceName;
     switch (record.type()) {
+    case PTR:
+        serviceName = record.target();
+        break;
     case SRV:
         serviceName = record.name();
         break;
@@ -237,7 +202,6 @@ void BrowserPrivate::onRecordExpired(const Record &record)
     if (!service.name().isNull()) {
         emit q->serviceRemoved(service);
         services.remove(serviceName);
-        updateHostnames();
     }
 }
 
@@ -254,11 +218,7 @@ void BrowserPrivate::onQueryTimeout()
     // Include PTR records for the target that are already known
     QList<Record> records;
     if (cache->lookupRecords(query.name(), PTR, records)) {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 6, 0))
-		for (const Record &record : std::as_const(records)) {
-#else
-		for (const Record &record : qAsConst(records)) {
-#endif
+        for (const Record &record : qAsConst(records)) {
             message.addRecord(record);
         }
     }
@@ -271,11 +231,8 @@ void BrowserPrivate::onServiceTimeout()
 {
     if (ptrTargets.count()) {
         Message message;
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 6, 0))
-		for (const QByteArray &target : std::as_const(ptrTargets)) {
-#else
-		for (const QByteArray &target : qAsConst(ptrTargets)) {
-#endif
+        for (const QByteArray &target : qAsConst(ptrTargets)) {
+
             // Add a query for PTR records
             Query query;
             query.setName(target);
@@ -285,11 +242,7 @@ void BrowserPrivate::onServiceTimeout()
             // Include PTR records for the target that are already known
             QList<Record> records;
             if (cache->lookupRecords(target, PTR, records)) {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 6, 0))
-				for (const Record &record : std::as_const(records)) {
-#else
-				for (const Record &record : qAsConst(records)) {
-#endif
+                for (const Record &record : qAsConst(records)) {
                     message.addRecord(record);
                 }
             }
@@ -297,15 +250,6 @@ void BrowserPrivate::onServiceTimeout()
 
         server->sendMessageToAll(message);
         ptrTargets.clear();
-    }
-}
-
-void BrowserPrivate::updateHostnames()
-{
-    hostnames.clear();
-
-    for (const auto& service : services) {
-        hostnames.insert(service.hostname());
     }
 }
 

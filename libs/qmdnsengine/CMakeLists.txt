@@ -21,34 +21,15 @@ set(INCLUDE_INSTALL_DIR include CACHE STRING "Header installation directory rela
 set(DOC_INSTALL_DIR share/doc/qmdnsengine CACHE STRING "Documentation installation directory relative to the install prefix")
 set(EXAMPLES_INSTALL_DIR "${LIB_INSTALL_DIR}/qmdnsengine/examples" CACHE STRING "Examples installation directory relative to the install prefix")
 
-if (CMAKE_PREFIX_PATH)
-	message( STATUS "QMdnsEngine: Use CMAKE_PREFIX_PATH to locate Qt version to be used: ${CMAKE_PREFIX_PATH}" )
-endif()
-
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Network REQUIRED)
-message( STATUS "QMdnsEngine: Found Qt Version: ${QT_VERSION}" )
-
-if (${QT_VERSION_MAJOR} GREATER_EQUAL 6 )
-	SET(QT_MIN_VERSION "6.0.0")
-else()
-	SET(QT_MIN_VERSION "5.7.0")
-endif()
-
-if ( "${QT_VERSION}" VERSION_LESS "${QT_MIN_VERSION}" )
-	message( FATAL_ERROR "Your Qt version is to old! Minimum required ${QT_MIN_VERSION}" )
-endif()
-
-find_package(Qt${QT_VERSION_MAJOR} ${QT_VERSION} COMPONENTS Network REQUIRED)
-
-message( STATUS "QMdnsEngine: Qt version used: ${QT_VERSION}" )
+find_package(Qt5Network 5.7 REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 
 # Add compilation flags for warnings
 if (MSVC)
-    add_compile_options(/W4)
+    add_compile_options(/W4 /WX)
 else()
-    add_compile_options(-Wall -Wextra -pedantic)
+    add_compile_options(-Wall -Wextra -pedantic -Werror)
 endif()
 
 add_subdirectory(src)
@@ -61,13 +42,13 @@ endif()
 
 option(BUILD_EXAMPLES "Build example applications" OFF)
 if(BUILD_EXAMPLES)
-    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+    find_package(Qt5Widgets 5.7)
     add_subdirectory(examples)
 endif()
 
 option(BUILD_TESTS "Build test suite" OFF)
 if(BUILD_TESTS)
-    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test REQUIRED)
+    find_package(Qt5Test 5.7 REQUIRED)
     enable_testing()
     add_subdirectory(tests)
 endif()

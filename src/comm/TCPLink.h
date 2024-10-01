@@ -15,13 +15,13 @@
 #include <QMutex>
 #include <QHostAddress>
 #include <LinkInterface.h>
-#include "QGCConfig.h"
 
 // Even though QAbstractSocket::SocketError is used in a signal by Qt, Qt doesn't declare it as a meta type.
 // This in turn causes debug output to be kicked out about not being able to queue the signal. We declare it
 // as a meta type to silence that.
 #include <QMetaType>
 #include <QTcpSocket>
+
 
 //#define TCPLINK_READWRITE_DEBUG   // Use to debug data reads/writes
 
@@ -43,10 +43,8 @@ public:
     TCPConfiguration(TCPConfiguration* source);
 
     quint16             port        (void) const                         { return _port; }
-    const QHostAddress& address     (void)                          { return _address; }
-    const QString       host        (void)                          { return _address.toString(); }
+    QString             host        (void) const                         { return _host; }
     void                setPort     (quint16 port);
-    void                setAddress  (const QHostAddress& address);
     void                setHost     (const QString host);
 
     //LinkConfiguration overrides
@@ -62,7 +60,7 @@ signals:
     void hostChanged(void);
 
 private:
-    QHostAddress    _address;
+    QString         _host;
     quint16         _port;
 };
 
@@ -77,9 +75,14 @@ public:
     QTcpSocket* getSocket           (void) { return _socket; }
     void        signalBytesWritten  (void);
 
+    // create stop timmer method
+    void stopReconnectTimer();
+
+
     // LinkInterface overrides
     bool isConnected(void) const override;
     void disconnect (void) override;
+
 
 private slots:
     void _socketError   (QAbstractSocket::SocketError socketError);
@@ -87,10 +90,15 @@ private slots:
 
     // LinkInterface overrides
     void _writeBytes(const QByteArray data) override;
+    void _attemptReconnect(void);
 
 private:
     // LinkInterface overrides
+    QTimer* _reconnectTimer;
+    void _reconnect(void);
     bool _connect(void) override;
+
+    
 
     bool _hardwareConnect   (void);
 #ifdef TCPLINK_READWRITE_DEBUG

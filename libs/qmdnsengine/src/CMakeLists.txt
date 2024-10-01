@@ -44,18 +44,8 @@ endif()
 
 add_library(qmdnsengine ${HEADERS} ${SRC})
 
-if ( "${QT_VERSION}" VERSION_GREATER_EQUAL "6.6.0" )
-    message( STATUS "QMdnsEngine: Enable C++17 for Qt 6.6 and newer" )
-    set_target_properties(qmdnsengine PROPERTIES
-        CXX_STANDARD          17
-    )
-else()
-	set_target_properties(qmdnsengine PROPERTIES
-        CXX_STANDARD          11
-    )
-endif()
-
 set_target_properties(qmdnsengine PROPERTIES
+    CXX_STANDARD          11
     CXX_STANDARD_REQUIRED ON
     DEFINE_SYMBOL         QT_NO_SIGNALS_SLOTS_KEYWORDS
     DEFINE_SYMBOL         QT_NO_FOREACH
@@ -71,7 +61,7 @@ target_include_directories(qmdnsengine PUBLIC
     "$<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}>"
 )
 
-target_link_libraries(qmdnsengine Qt${QT_VERSION_MAJOR}::Network)
+target_link_libraries(qmdnsengine Qt5::Network)
 
 install(TARGETS qmdnsengine
     EXPORT        qmdnsengine-export

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <libevents_definitions.h>
+
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -8,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "../common/event_type.h"
 #include "nlohmann_json/single_include/nlohmann/json_fwd.hpp"
 
 namespace events
@@ -113,7 +114,7 @@ public:
     const std::string& type() const { return _event_definition.type; }
 
     int numArguments() const { return static_cast<int>(_event_definition.arguments.size()); }
-    const EventArgumentDefinition& argument(std::size_t index) const { return _event_definition.arguments[index]; }
+    const EventArgumentDefinition& argument(int index) const { return _event_definition.arguments[index]; }
     Argument argumentValue(int index) const;
     uint64_t argumentValueInt(int index) const;
 
@@ -161,7 +162,7 @@ public:
 
     std::set<std::string> supportedProtocols(uint8_t component_id) const;
 
-    NavigationModeGroups navigationModeGroups(uint8_t component_id) const;
+    NavigationModeGroups navigationModeGroups(uint8_t component_id);
 
 private:
     bool loadDefinitions(const nlohmann::json& j);

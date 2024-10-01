@@ -240,7 +240,6 @@ void TestDns::testWriteName()
     QMdnsEngine::writeName(packet, offset, name, nameMap);
 
     QCOMPARE(packet, correctPacket);
-    QCOMPARE(offset, correctOffset);
 }
 
 void TestDns::testParseRecordA()

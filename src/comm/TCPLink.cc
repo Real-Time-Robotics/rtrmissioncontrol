@@ -25,6 +25,19 @@ TCPLink::TCPLink(SharedLinkConfigurationPtr& config)
     Q_ASSERT(_tcpConfig);
     connect(_reconnectTimer, &QTimer::timeout, this, &TCPLink::_attemptReconnect);
 
+    if (!_hardwareConnect())
+    {
+        qWarning() << "Reconnection attempt failed, retrying...";
+        _reconnectTimer->start(1000); // Retry every second
+    }
+    else
+    {
+        qWarning() << "Reconnected successfully.";
+        _reconnectTimer->stop();
+
+
+    }
+
 }
 
 TCPLink::~TCPLink()

@@ -679,7 +679,7 @@ void LinkManager::shutdown(void)
 {
     setConnectionsSuspended(tr("Shutdown"));
     
-    disconnectAll("Shutdown Link Manager");
+    disconnectAll();
   
 
 

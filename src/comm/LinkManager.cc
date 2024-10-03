@@ -142,12 +142,13 @@ bool LinkManager::createConnectedLink(SharedLinkConfigurationPtr& config, bool i
     case LinkConfiguration::TypeLast:
         break;
     }
-
     if (link) {
         if (false == link->_allocateMavlinkChannel() ) {
-            qCWarning(LinkManagerLog) << "Link failed to setup mavlink channels";
+
+
             return false;
         }
+
 
         _rgLinks.append(link);
         config->setLink(link);
@@ -160,8 +161,10 @@ bool LinkManager::createConnectedLink(SharedLinkConfigurationPtr& config, bool i
         _mavlinkProtocol->resetMetadataForLink(link.get());
         _mavlinkProtocol->setVersion(_mavlinkProtocol->getCurrentVersion());
 
-        if (!link->_connect()) {
+        if (!link->_connect() && config->type() != LinkConfiguration::TypeTcp) {
+
             link->_freeMavlinkChannel();
+            // qWarning () << "Remove rglink" << config->type();
             _rgLinks.removeAt(_rgLinks.indexOf(link));
             config->setLink(nullptr);
             return false;
@@ -169,7 +172,6 @@ bool LinkManager::createConnectedLink(SharedLinkConfigurationPtr& config, bool i
 
         return true;
     }
-
     return false;
 }
 
@@ -197,10 +199,10 @@ SharedLinkInterfacePtr LinkManager::mavlinkForwardingSupportLink()
     return nullptr;
 }
 
-void LinkManager::disconnectAll(void)
+void LinkManager::disconnectAll(std::string from)
 {
     QList<SharedLinkInterfacePtr> links = _rgLinks;
-    qWarning() << "LinkManager::Disconnecting";
+    qWarning() << "LinkManager::Disconnecting" << &from ;
 
 
     for (const SharedLinkInterfacePtr& sharedLink: links) {
@@ -218,11 +220,11 @@ void LinkManager::_linkDisconnected(void)
         return;
     }
 
-    disconnect(link, &LinkInterface::communicationError,  _app,                &QGCApplication::criticalMessageBoxOnMainThread);
+    disconnect(link, &LinkInterface::communicationError,     _app,                &QGCApplication::criticalMessageBoxOnMainThread);
     disconnect(link, &LinkInterface::bytesReceived,       _mavlinkProtocol,    &MAVLinkProtocol::receiveBytes);
     disconnect(link, &LinkInterface::bytesSent,           _mavlinkProtocol,    &MAVLinkProtocol::logSentBytes);
     disconnect(link, &LinkInterface::disconnected,        this,                &LinkManager::_linkDisconnected);
-
+    // qWarning()<<"Link disconnect";
     link->_freeMavlinkChannel();
     for (int i=0; i<_rgLinks.count(); i++) {
         if (_rgLinks[i].get() == link) {
@@ -678,7 +680,7 @@ void LinkManager::shutdown(void)
 {
     setConnectionsSuspended(tr("Shutdown"));
     
-    disconnectAll();
+    disconnectAll("Shutdown Link Manager");
   
 
 

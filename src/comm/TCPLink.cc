@@ -20,28 +20,16 @@ TCPLink::TCPLink(SharedLinkConfigurationPtr& config)
     , _reconnectTimer(new QTimer(this))
     , _tcpConfig(qobject_cast<TCPConfiguration*>(config.get()))
     , _socket(nullptr)
-    , _socketIsConnected(false)
+    , _socketIsConnected(true)
 {
     Q_ASSERT(_tcpConfig);
     connect(_reconnectTimer, &QTimer::timeout, this, &TCPLink::_attemptReconnect);
-
-    if (!_hardwareConnect())
-    {
-        qWarning() << "Reconnection attempt failed, retrying...";
-        _reconnectTimer->start(1000); // Retry every second
-    }
-    else
-    {
-        qWarning() << "Reconnected successfully.";
-        _reconnectTimer->stop();
-
-
-    }
 
 }
 
 TCPLink::~TCPLink()
 {
+    qWarning () << "Huy================================>";
     TCPLink::disconnect();
     if (_reconnectTimer->isActive())
     {
@@ -49,7 +37,7 @@ TCPLink::~TCPLink()
         _reconnectTimer->stop();
 
     }
-   delete _reconnectTimer;
+    delete _reconnectTimer;
 }
 
 #ifdef TCPLINK_READWRITE_DEBUG
@@ -110,11 +98,11 @@ void TCPLink::disconnect(void)
     qWarning() << "Disconnecting";
     if (_reconnectTimer->isActive())
     {
-            _reconnectTimer->disconnect();
+        _reconnectTimer->disconnect();
         _reconnectTimer->stop();
 
     }
-     qWarning() << "Timmer stopped";
+    qWarning() << "Timmer stopped";
     if (_socket) {
 
 
@@ -127,7 +115,7 @@ void TCPLink::disconnect(void)
         emit disconnected();
     }
     else {
-        qWarning() << "Warning: socket deleted";
+        // qWarning() << "Warning: socket deleted";
         _socketIsConnected = false;
         emit disconnected();
 
@@ -139,8 +127,20 @@ void TCPLink::disconnect(void)
 bool TCPLink::_connect(void)
 {
     if (_socket) {
-        qWarning() << "connect called while already connected";
+        // qWarning() << "connect called while already connected";
         return true;
+    }
+    if (!_hardwareConnect())
+    {
+        // qWarning() << "Reconnection attempt failed, retrying...";
+        _reconnectTimer->start(1000); // Retry every second
+    }
+    else
+    {
+        // qWarning() << "Reconnected successfully.";
+        _reconnectTimer->stop();
+
+
     }
 
     return _hardwareConnect();
@@ -150,31 +150,27 @@ void TCPLink::_attemptReconnect(void)
 {
     if (!_hardwareConnect())
     {
-        qWarning() << "Reconnection attempt failed, retrying...";
+        // qWarning() << "Reconnection attempt failed, retrying...";
         _reconnectTimer->start(1000); // Retry every second
     }
     else
     {
-        qWarning() << "Reconnected successfully.";
+        // qWarning() << "Reconnected successfully.";
         _reconnectTimer->stop();
-
-
     }
 }
 
 bool TCPLink::_hardwareConnect()
 {
-      // Delete socket
+    // Delete socket
     if (_socket != nullptr) {
         delete _socket;
         _socket = nullptr;
     }
-
-    Q_ASSERT(_socket == nullptr);
     _socket = new QTcpSocket();
     QObject::connect(_socket, &QIODevice::readyRead, this, &TCPLink::_readBytes);
 
-    QSignalSpy errorSpy(_socket, &QAbstractSocket::errorOccurred);
+    // QSignalSpy errorSpy(_socket, &QAbstractSocket::errorOccurred);
     QObject::connect(_socket, &QAbstractSocket::errorOccurred, this, &TCPLink::_socketError);
 
     _socket->connectToHost(_tcpConfig->host(), _tcpConfig->port());
@@ -184,14 +180,15 @@ bool TCPLink::_hardwareConnect()
     {
         // Whether a failed connection emits an error signal or not is platform specific.
         // So in cases where it is not emitted, we emit one ourselves.
-        if (errorSpy.count() == 0) {
+        // if (errorSpy.count() == 0) {
             // emit communicationError(tr("Link Error"), tr("Error on link %1. Connection failed").arg(_config->name()));
-        }
+        // }
         delete _socket;
         _socket = nullptr;
         _socketIsConnected = false;
         return false;
     }
+
     _socketIsConnected = true;
     emit connected();
     qWarning() << "Check timmer: " << _reconnectTimer->isActive() ;

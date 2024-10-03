@@ -199,10 +199,9 @@ SharedLinkInterfacePtr LinkManager::mavlinkForwardingSupportLink()
     return nullptr;
 }
 
-void LinkManager::disconnectAll(std::string from)
+void LinkManager::disconnectAll()
 {
     QList<SharedLinkInterfacePtr> links = _rgLinks;
-    qWarning() << "LinkManager::Disconnecting" << &from ;
 
 
     for (const SharedLinkInterfacePtr& sharedLink: links) {

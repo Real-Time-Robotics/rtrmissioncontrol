@@ -12,6 +12,8 @@
 #include "QGCLoggingCategory.h"
 #include "LinkManager.h"
 #include "QGCApplication.h"
+#include <QDebug>
+#include "TCPLink.h"
 
 QGC_LOGGING_CATEGORY(VehicleLinkManagerLog, "VehicleLinkManagerLog")
 
@@ -90,6 +92,7 @@ void VehicleLinkManager::_commRegainedOnLink(LinkInterface* link)
         }
         if (noCommunicationLoss) {
             _communicationLost = false;
+
             emit communicationLostChanged(false);
         }
     }
@@ -129,7 +132,9 @@ void VehicleLinkManager::_commLostCheck(void)
     }
 
     // Check for total communication loss
+
     if (!_communicationLost) {
+
         bool totalCommunicationLoss = true;
         for (const LinkInfo_t& linkInfo: _rgLinkInfo) {
             if (!linkInfo.commLost) {
@@ -137,18 +142,37 @@ void VehicleLinkManager::_commLostCheck(void)
                 break;
             }
         }
+          qWarning () << "Checking";
         if (totalCommunicationLoss) {
             if (_autoDisconnect) {
+
+
+
                 // There is only one link to the vehicle and we want to auto disconnect from it
                 closeVehicle();
+                qWarning () << "_autoDisconnect";
                 return;
             }
-            _vehicle->_say(tr("%1Communication lost").arg(_vehicle->_vehicleIdSpeech()));
+             // closeVehicle();
 
+            _vehicle->_say(tr("%1Communication lost").arg(_vehicle->_vehicleIdSpeech()));
+            // LinkInterface* link = qobject_cast<LinkInterface*>(sender());
+
+
+            qWarning () << "========================== Error1 ========================";
+            qWarning () << "========================================================================================================";
+            for (LinkInfo_t& linkInfo: _rgLinkInfo) {
+                qWarning() << "TCPLink: " << linkInfo.link.get();
+                // Check if the link is a TCPLink
+                TCPLink* tcpLink = qobject_cast<TCPLink*>(linkInfo.link.get());
+
+                tcpLink->attemptReconnect();
+            }
             _communicationLost = true;
             emit communicationLostChanged(true);
         }
     }
+
 }
 
 int VehicleLinkManager::_containsLinkIndex(LinkInterface* link)
@@ -222,11 +246,14 @@ void VehicleLinkManager::_removeLink(LinkInterface* link)
 }
 
 void VehicleLinkManager::_linkDisconnected(void)
+
 {
+    qWarning () << "Deleting sockets";
     qCDebug(VehicleLog) << "_linkDisconnected linkCount" << _rgLinkInfo.count();
 
     LinkInterface* link = qobject_cast<LinkInterface*>(sender());
     if (link) {
+        qWarning () << "find delete sockets";
         _removeLink(link);
         _updatePrimaryLink();
         if (_rgLinkInfo.count() == 0) {
@@ -330,6 +357,8 @@ bool VehicleLinkManager::_updatePrimaryLink(void)
 
 void VehicleLinkManager::closeVehicle(void)
 {
+    qWarning () << "Close vehicle";
+
     // Vehicle is no longer communicating with us. Remove all link references
 
     QList<LinkInfo_t> rgLinkInfoCopy = _rgLinkInfo;

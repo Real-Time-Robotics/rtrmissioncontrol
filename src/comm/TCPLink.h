@@ -82,6 +82,7 @@ public:
     // LinkInterface overrides
     bool isConnected(void) const override;
     void disconnect (void) override;
+    void attemptReconnect(void);
 
 
 private slots:
@@ -90,7 +91,7 @@ private slots:
 
     // LinkInterface overrides
     void _writeBytes(const QByteArray data) override;
-    void _attemptReconnect(void);
+
 
 private:
     // LinkInterface overrides

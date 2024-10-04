@@ -23,7 +23,7 @@ TCPLink::TCPLink(SharedLinkConfigurationPtr& config)
     , _socketIsConnected(true)
 {
     Q_ASSERT(_tcpConfig);
-    connect(_reconnectTimer, &QTimer::timeout, this, &TCPLink::_attemptReconnect);
+    connect(_reconnectTimer, &QTimer::timeout, this, &TCPLink::attemptReconnect);
 
 }
 
@@ -146,7 +146,7 @@ bool TCPLink::_connect(void)
     return _hardwareConnect();
 }
 
-void TCPLink::_attemptReconnect(void)
+void TCPLink::attemptReconnect(void)
 {
     if (!_hardwareConnect())
     {

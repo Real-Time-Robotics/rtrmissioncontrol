@@ -162,11 +162,17 @@ void VehicleLinkManager::_commLostCheck(void)
             qWarning () << "========================== Error1 ========================";
             qWarning () << "========================================================================================================";
             for (LinkInfo_t& linkInfo: _rgLinkInfo) {
-                qWarning() << "TCPLink: " << linkInfo.link.get();
+                // qWarning() << "TCPLink: " << _rgLinkInfo;
                 // Check if the link is a TCPLink
-                TCPLink* tcpLink = qobject_cast<TCPLink*>(linkInfo.link.get());
 
-                tcpLink->attemptReconnect();
+
+                TCPLink* tcpLink = qobject_cast<TCPLink*>(linkInfo.link.get());
+                if (tcpLink)
+                { tcpLink->attemptReconnect();
+
+                }
+
+
             }
             _communicationLost = true;
             emit communicationLostChanged(true);
